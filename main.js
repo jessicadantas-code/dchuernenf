@@ -2,7 +2,7 @@ import { downloadJson } from "./helpers.js";
 import { renderApp } from "./ui.js";
 import { loadState, seedData, serializeState, syncAtividades } from "./state.js";
 
-const STORAGE_KEY = "dch_uern_sprint2_v1";
+const STORAGE_KEY = "dch_uern_sprint11_v1";
 
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeState()));

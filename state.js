@@ -16,17 +16,19 @@ export function syncAtividades() {
     if (!state.atividades[docente.id]) {
       state.atividades[docente.id] = {
         projetoPesquisa: false,
-        grupoPesquisa: false,
         projetoEnsino: false,
-        projetoExtensao: false,
         coordProjetoPibic: false,
+        extCoordCount: 0,
+        extMembroCount: 0,
+        grupoPesquisaCount: 0,
+        grupoPesquisaLiderCount: 0,
         nde: "none",
         fiel: false,
         fieb: false,
         comiteEtica: false,
         orientacoesTcc: 0,
         orientacoesPibic: 0,
-        outras: [{ nome: "", ch: 0 }, { nome: "", ch: 0 }, { nome: "", ch: 0 }],
+        outras: [{ nome: "", ch: 0 }],
       };
     }
   });
@@ -37,7 +39,7 @@ function makeComponente(periodo, codigo, nome, teorica, pratica, orientacao, tot
 }
 
 function fromCatalogo(comp) {
-  return { id: uid(), ...comp, docentes: [], praticaDocentes: [] };
+  return { id: uid(), ...comp, docentes: [] };
 }
 
 function buildCatalogo() {
@@ -48,49 +50,41 @@ function buildCatalogo() {
     makeComponente("P1","CAC0034","Antropologia: cultura e saúde",45,0,0,45),
     makeComponente("P1","CAC0033","Fundamentos da Sociologia",60,0,0,60),
     makeComponente("P1","CFI0098","Introdução à Filosofia",60,0,0,60),
-
     makeComponente("P2","CAC0038","Práticas Interprofissionais em Saúde",30,15,0,45),
     makeComponente("P2","CAC0039","História da enfermagem",60,0,0,60),
     makeComponente("P2","CAC0040","Epidemiologia",60,15,0,75),
     makeComponente("P2","CAC0041","Saúde e gênero",30,0,0,30),
     makeComponente("P2","CAC0042","Módulo morfofuncional I",105,45,0,150),
     makeComponente("P2","UCE0022","UCE",15,0,45,60),
-
     makeComponente("P3","CAC0044","Investigação em Enfermagem",45,0,0,45),
     makeComponente("P3","CAC0045","Ética e bioética na enfermagem",60,0,0,60),
     makeComponente("P3","CAC0043","Módulo morfofuncional II",90,60,0,150),
     makeComponente("P3","CAC0046","Saúde coletiva I",75,15,0,90),
     makeComponente("P3","CAC0047","Saúde e meio ambiente",45,0,0,45),
     makeComponente("P3","UCE0023","UCE",15,0,45,60),
-
     makeComponente("P4","CAC0048","Semiologia da enfermagem",45,45,0,90),
     makeComponente("P4","CAC0049","Agentes biopatogênicos",90,30,0,120),
     makeComponente("P4","CAC0050","Metodologia da assistência de enfermagem",45,15,0,60),
     makeComponente("P4","CAC0051","Saúde coletiva II",45,15,0,60),
     makeComponente("P4","UCE0024","UCE",15,0,45,60),
-
     makeComponente("P5","CAC0052","Bioestatística básica",45,0,0,45),
     makeComponente("P5","CAC0053","Semiotécnica da enfermagem",60,60,0,120),
     makeComponente("P5","CAC0054","Farmacologia básica e aplicada",120,0,0,120),
     makeComponente("P5","CAC0055","Patologia geral",45,0,0,45),
     makeComponente("P5","UCE0025","UCE",15,0,45,60),
-
     makeComponente("P6","CAC0056","Saúde mental",60,15,0,75),
     makeComponente("P6","CAC0057","Processo gerenciar",45,15,0,60),
     makeComponente("P6","CAC0058","Saúde sexual e reprodutiva",120,60,0,180),
     makeComponente("P6","UCE0026","UCE",15,0,45,60),
     makeComponente("P6","UCE0006","UCE",15,0,15,30),
-
     makeComponente("P7","CAC0060","Atenção à saúde da criança e do adolescente",150,30,0,180),
     makeComponente("P7","CAC0061","Processo pesquisar",60,0,0,60),
     makeComponente("P7","CAC0059","Urgência e emergência",45,30,0,75),
     makeComponente("P7","UCE0027","UCE",15,0,45,60),
-
     makeComponente("P8","CAC0062","Saúde do trabalhador",45,15,0,60),
     makeComponente("P8","CAC0063","Cuidados clínicos e intensivos",150,45,0,195),
     makeComponente("P8","CAC0064","Saúde da pessoa idosa",60,15,0,75),
     makeComponente("P8","UCE0028","UCE",15,0,45,60),
-
     makeComponente("P9","CAC0065","Estágio curricular supervisionado I",60,0,405,465),
     makeComponente("P9","CAC0066","Monografia",15,0,30,45),
     makeComponente("P10","CAC0067","Estágio curricular supervisionado II",60,0,420,480),
@@ -122,8 +116,9 @@ export function addOfertaFromCatalogo(codigo) {
 }
 
 export function addPeriodoFromCatalogo(periodo) {
-  const comps = state.catalogo.filter((item) => item.periodo === periodo);
-  comps.forEach((comp) => state.oferta.push(fromCatalogo(comp)));
+  state.catalogo.filter((item) => item.periodo === periodo).forEach((comp) => {
+    state.oferta.push(fromCatalogo(comp));
+  });
 }
 
 export function seedData() {
@@ -145,10 +140,9 @@ export function seedData() {
   ].filter(Boolean);
 
   state.horarios = [
-    { id: uid(), docente: "", ofertaId: state.oferta.find(x => x.codigo === "CAC0042")?.id || "", turma: "P2", dia: "Segunda", turno: "Manhã", inicio: "08:00", fim: "10:00" },
-    { id: uid(), docente: "", ofertaId: state.oferta.find(x => x.codigo === "CAC0048")?.id || "", turma: "P4", dia: "Segunda", turno: "Manhã", inicio: "09:00", fim: "11:00" }
+    { id: uid(), ofertaId: state.oferta.find(x => x.codigo === "CAC0042")?.id || "", dia: "Segunda", turno: "Manhã", inicio: "08:00", fim: "10:00" },
+    { id: uid(), ofertaId: state.oferta.find(x => x.codigo === "CAC0048")?.id || "", dia: "Segunda", turno: "Manhã", inicio: "10:00", fim: "12:00" }
   ];
-
   state.gradeFilters = { view: "turma", turma: "P2", docente: "" };
   syncAtividades();
 }
