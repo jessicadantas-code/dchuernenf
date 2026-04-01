@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DCH UERN</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand-wrap">
+        <img src="./assets/uern_logo.png" alt="Logo UERN" class="brand-logo" />
+        <div>
+          <div class="eyebrow">Universidade do Estado do Rio Grande do Norte</div>
+          <h1>DCH UERN</h1>
+          <p>Curso de Enfermagem — Campus Caicó</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button id="btn-seed">Carregar exemplo</button>
+        <button id="btn-export">Exportar JSON</button>
+        <label class="file-label">Importar JSON<input id="input-import" type="file" accept=".json" hidden /></label>
+      </div>
+    </header>
+
+    <nav class="tabs" id="tabs"></nav>
+
+    <main>
+      <section id="panel-docentes" class="panel active"></section>
+      <section id="panel-oferta" class="panel"></section>
+      <section id="panel-atividades" class="panel"></section>
+      <section id="panel-resumo" class="panel"></section>
+      <section id="panel-horarios" class="panel"></section>
+      <section id="panel-grade" class="panel"></section>
+      <section id="panel-relatorios" class="panel"></section>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
