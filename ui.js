@@ -1,6 +1,6 @@
 import { uid, round2 } from "./helpers.js";
 import { calcResumoDocente, detectHorarioConflicts } from "./rules.js";
-import { state, syncAtividades } from "./state.js";
+import { addOfertaFromCatalogo, addPeriodoFromCatalogo, state, syncAtividades } from "./state.js";
 
 const tabs = [
   { key: "docentes", label: "Docentes" },
@@ -75,12 +75,55 @@ function renderChoiceList(selectedIds, docentes, onToggle, enabledIds = null) {
   return wrapper;
 }
 
+
 function renderOfertaPanel(render) {
   const panel = document.getElementById("panel-oferta");
-  panel.innerHTML = `<div class="bar"><h2>Oferta 26.2</h2><button id="add-oferta">Adicionar disciplina</button></div>
-    <div class="help">Inclui obrigatórias, optativas e especiais. Disciplina especial individual conta 50% da CH da oferta regular.</div>
+  const periodosCatalogo = [...new Set(state.catalogo.map(item => item.periodo))];
+  const opcoesCatalogo = state.catalogo.map(item => `<option value="${item.codigo}">${item.periodo} — ${item.codigo} — ${item.nome}</option>`).join("");
+  const opcoesPeriodos = periodosCatalogo.map(p => `<option value="${p}">${p}</option>`).join("");
+
+  panel.innerHTML = `<div class="bar"><h2>Oferta 26.2</h2></div>
+    <div class="help">Agora você pode puxar as disciplinas automaticamente do catálogo do PPC. Ao escolher um componente ou um período, o sistema já traz período, CH teórica, prática, orientação, tipo e regra especial.</div>
+    <div class="card" style="margin-bottom:.8rem">
+      <div class="grid">
+        <div>
+          <label>Adicionar disciplina do catálogo</label>
+          <select id="catalogo-disciplina">
+            <option value="">Selecione</option>
+            ${opcoesCatalogo}
+          </select>
+        </div>
+        <div style="align-self:end"><button id="add-catalogo-disciplina">Adicionar disciplina</button></div>
+        <div>
+          <label>Adicionar período inteiro</label>
+          <select id="catalogo-periodo">
+            <option value="">Selecione</option>
+            ${opcoesPeriodos}
+          </select>
+        </div>
+        <div style="align-self:end"><button id="add-catalogo-periodo">Adicionar período</button></div>
+      </div>
+    </div>
+    <div class="bar"><button id="add-oferta">Adicionar disciplina manual</button></div>
     <div class="card"><table><thead><tr><th>Período</th><th>Tipo</th><th>Especial</th><th>Código</th><th>Disciplina</th><th>CH Teórica</th><th>CH Prática</th><th>CH Orientação</th><th>Semanas</th><th>Docentes</th><th>Prática</th><th></th></tr></thead><tbody id="oferta-tbody"></tbody></table></div>`;
-  panel.querySelector("#add-oferta").onclick = () => { state.oferta.push({ id: uid(), periodo: "", tipo: "obrigatoria", especial: "nao", codigo: "", nome: "", teorica: 0, pratica: 0, orientacao: 0, total: 0, semanas: 15, docentes: [], praticaDocentes: [] }); render(); };
+
+  panel.querySelector("#add-catalogo-disciplina").onclick = () => {
+    const codigo = panel.querySelector("#catalogo-disciplina").value;
+    if (!codigo) return;
+    addOfertaFromCatalogo(codigo);
+    render();
+  };
+  panel.querySelector("#add-catalogo-periodo").onclick = () => {
+    const periodo = panel.querySelector("#catalogo-periodo").value;
+    if (!periodo) return;
+    addPeriodoFromCatalogo(periodo);
+    render();
+  };
+  panel.querySelector("#add-oferta").onclick = () => {
+    state.oferta.push({ id: uid(), periodo: "", tipo: "obrigatoria", especial: "nao", codigo: "", nome: "", teorica: 0, pratica: 0, orientacao: 0, total: 0, semanas: 15, docentes: [], praticaDocentes: [] });
+    render();
+  };
+
   const tbody = panel.querySelector("#oferta-tbody"); tbody.innerHTML = "";
   state.oferta.forEach((oferta) => {
     const row = document.createElement("tr");
@@ -339,7 +382,7 @@ function printSection(sectionId, title) {
       <body>
         <div class="header">
           <div class="header-top">
-            <img src="./assets/uern_logo.png" alt="Logo UERN" class="print-logo" />
+            <img src="./uern_logo.png" alt="Logo UERN" class="print-logo" />
             <div>
               <div class="inst">UNIVERSIDADE DO ESTADO DO RIO GRANDE DO NORTE</div>
               <div class="unit">Campus Caicó — Curso de Enfermagem</div>
