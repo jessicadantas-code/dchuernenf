@@ -18,20 +18,14 @@
         <p>Curso de Enfermagem — Campus Caicó</p>
       </div>
     </div>
-
     <div class="topbar-actions">
-      <button id="btnSeed">Carregar exemplo</button>
-      <button id="btnExportJson">Exportar JSON</button>
-      <label class="file-label">
-        Importar JSON
-        <input id="inputImport" type="file" accept=".json" hidden />
-      </label>
-      <button id="btnReset" class="danger">Limpar tudo</button>
+      <button id="btnSeed" type="button">Carregar exemplo</button>
+      <button id="btnExportJson" type="button">Exportar JSON</button>
+      <label class="file-label">Importar JSON<input id="inputImport" type="file" accept=".json" hidden /></label>
+      <button id="btnReset" class="danger" type="button">Limpar tudo</button>
     </div>
   </header>
-
   <nav class="tabs" id="tabs"></nav>
-
   <main>
     <section id="panel-docentes" class="panel active"></section>
     <section id="panel-oferta" class="panel"></section>
@@ -41,7 +35,6 @@
     <section id="panel-grade" class="panel"></section>
     <section id="panel-relatorios" class="panel"></section>
   </main>
-
   <script type="module" src="./main.js"></script>
 </body>
 </html>

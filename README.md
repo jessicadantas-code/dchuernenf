@@ -1,4 +1,4 @@
-# DCH UERN — Sprint 12
+# DCH UERN — Sprint 13
 
 Arquivos na raiz:
 - index.html
@@ -10,11 +10,14 @@ Arquivos na raiz:
 - ui.js
 - uern_logo.png
 
-Principais ajustes:
-- oferta 26.1 mais limpa
-- UCE = 1h de sala
-- especial individual = 50%
-- monitoria na aba atividades
-- horários puxando turma/docentes da oferta
-- persistência em localStorage
-- CSV e PDF
+Correções:
+- Comitê de Ética = 8h
+- Coordenação PIBIC = 8h
+- Extensão coordenação = 8h por ação
+- Extensão membro = 4h por ação
+- FIEL/FIEB = 2h
+- NDE = 2h membro / 4h coordenação
+- Outras comissões restauradas
+- Inputs de texto sem rerender por tecla
+- Resumo individual com disciplinas detalhadas
+- Exportações CSV/PDF revisadas
