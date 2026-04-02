@@ -1,17 +1,20 @@
-# DCH UERN — Sprint 11
+# DCH UERN — Sprint 12
 
-## Ajustes desta versão
-- Oferta puxa automaticamente disciplinas do catálogo do PPC
-- Também puxa período inteiro com CH já preenchida
-- Não precisa mais marcar docentes na prática em duplicidade
-- Cálculos de CH arredondados para inteiro
-- Atividades com:
-  - extensão coordenação 8h por ação
-  - extensão membro 4h por ação
-  - grupo de pesquisa 1h por grupo
-  - líder de grupo 2h por grupo
-  - outras comissões com adição dinâmica
-- Horários:
-  - seleciona a disciplina
-  - turma/período vem automático
-  - docentes vêm automáticos da disciplina
+Arquivos na raiz:
+- index.html
+- styles.css
+- helpers.js
+- state.js
+- rules.js
+- main.js
+- ui.js
+- uern_logo.png
+
+Principais ajustes:
+- oferta 26.1 mais limpa
+- UCE = 1h de sala
+- especial individual = 50%
+- monitoria na aba atividades
+- horários puxando turma/docentes da oferta
+- persistência em localStorage
+- CSV e PDF

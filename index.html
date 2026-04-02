@@ -1,40 +1,47 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DCH UERN</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <header class="topbar">
-      <div class="brand-wrap">
-        <img src="./uern_logo.png" alt="Logo UERN" class="brand-logo" />
-        <div>
-          <div class="eyebrow">Universidade do Estado do Rio Grande do Norte</div>
-          <h1>DCH UERN</h1>
-          <p>Curso de Enfermagem — Campus Caicó</p>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DCH UERN - Enfermagem Caicó</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-wrap">
+      <img src="./uern_logo.png" alt="Logo UERN" class="brand-logo" />
+      <div>
+        <div class="eyebrow">Universidade do Estado do Rio Grande do Norte</div>
+        <h1>DCH UERN</h1>
+        <p>Curso de Enfermagem — Campus Caicó</p>
       </div>
-      <div class="topbar-actions">
-        <button id="btn-seed">Carregar exemplo</button>
-        <button id="btn-export">Exportar JSON</button>
-        <label class="file-label">Importar JSON<input id="input-import" type="file" accept=".json" hidden /></label>
-      </div>
-    </header>
+    </div>
 
-    <nav class="tabs" id="tabs"></nav>
+    <div class="topbar-actions">
+      <button id="btnSeed">Carregar exemplo</button>
+      <button id="btnExportJson">Exportar JSON</button>
+      <label class="file-label">
+        Importar JSON
+        <input id="inputImport" type="file" accept=".json" hidden />
+      </label>
+      <button id="btnReset" class="danger">Limpar tudo</button>
+    </div>
+  </header>
 
-    <main>
-      <section id="panel-docentes" class="panel active"></section>
-      <section id="panel-oferta" class="panel"></section>
-      <section id="panel-atividades" class="panel"></section>
-      <section id="panel-resumo" class="panel"></section>
-      <section id="panel-horarios" class="panel"></section>
-      <section id="panel-grade" class="panel"></section>
-      <section id="panel-relatorios" class="panel"></section>
-    </main>
+  <nav class="tabs" id="tabs"></nav>
 
-    <script type="module" src="./main.js"></script>
-  </body>
+  <main>
+    <section id="panel-docentes" class="panel active"></section>
+    <section id="panel-oferta" class="panel"></section>
+    <section id="panel-atividades" class="panel"></section>
+    <section id="panel-resumo" class="panel"></section>
+    <section id="panel-horarios" class="panel"></section>
+    <section id="panel-grade" class="panel"></section>
+    <section id="panel-relatorios" class="panel"></section>
+  </main>
+
+  <script type="module" src="./main.js"></script>
+</body>
 </html>

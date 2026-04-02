@@ -1,6 +1,4 @@
-import { timeToMinutes, weeklyHours } from "./helpers.js";
-
-const roundCarga = (value) => Math.round(Number(value || 0));
+import { roundInt, weeklyHours, timeToMinutes } from "./helpers.js";
 
 export const defaults = {
   nde: { none: 0, membro: 2, coordenacao: 4 },
@@ -14,52 +12,41 @@ export const defaults = {
   },
 };
 
-export function getOfertaMultiplier(oferta) {
-  if (oferta?.tipo === "especial" && oferta?.especial === "individual") return 0.5;
-  return 1;
+export function isUCE(oferta) {
+  return (
+    (oferta.codigo || "").startsWith("UCE") ||
+    (oferta.nome || "").toUpperCase().includes("UCE")
+  );
 }
 
-export function getOfertaTurma(oferta) {
-  return oferta?.periodo || "";
-}
-
-export function getOfertaDocentes(oferta) {
-  return oferta?.docentes || [];
+export function isEspecialIndividual(oferta) {
+  return oferta.tipo === "especial" && oferta.especial === "individual";
 }
 
 export function calcDisciplinaParaDocente(oferta, docenteId) {
-  if (!(oferta?.docentes || []).includes(docenteId)) return { sala: 0, regencia: 0 };
+  if (!(oferta.docentes || []).includes(docenteId)) {
+    return { sala: 0, regencia: 0 };
+  }
+
+  if (isUCE(oferta)) {
+    return { sala: 1, regencia: 0 };
+  }
 
   const totalDocentes = (oferta.docentes || []).length || 1;
-  const mult = getOfertaMultiplier(oferta);
-  const teoriaSemanal = (weeklyHours(oferta.teorica, oferta.semanas) / totalDocentes) * mult;
-  const orientacaoSemanal = (weeklyHours(oferta.orientacao, oferta.semanas) / totalDocentes) * mult;
-  const praticaSemanal = weeklyHours(oferta.pratica, oferta.semanas) * mult;
+  const multiplicador = isEspecialIndividual(oferta) ? 0.5 : 1;
+  const teoriaSemanal = (weeklyHours(oferta.teorica, 15) / totalDocentes) * multiplicador;
+  const praticaSemanal = weeklyHours(oferta.pratica, 15) * multiplicador;
 
   return {
-    sala: roundCarga(teoriaSemanal + orientacaoSemanal + praticaSemanal),
-    regencia: roundCarga(teoriaSemanal + (praticaSemanal * 0.5)),
-  };
-}
-
-export function calcOrientacoesEPesquisaDocente(docente, state) {
-  const acts = state.atividades[docente.id] || {};
-  const orientTcc = Math.min(Number(acts.orientacoesTcc || 0), 4) * 2;
-  const orientPibic = Math.min(Number(acts.orientacoesPibic || 0) * 2, 8);
-  const coordProjetoPibic = acts.coordProjetoPibic ? defaults.binaryHours.coordProjetoPibic : 0;
-
-  return {
-    orientTcc: roundCarga(orientTcc),
-    orientPibic: roundCarga(orientPibic),
-    coordProjetoPibic: roundCarga(coordProjetoPibic),
-    totalOrientacoesEPesquisa: roundCarga(orientTcc + orientPibic + coordProjetoPibic),
+    sala: roundInt(teoriaSemanal + praticaSemanal),
+    regencia: roundInt(teoriaSemanal + (praticaSemanal * 0.5)),
   };
 }
 
 export function calcResumoDocente(docente, state) {
   const acts = state.atividades[docente.id] || {};
   let sala = 0, regencia = 0, pesquisa = 0, extensao = 0, ensino = 0, comissoes = 0;
-  const funcao = roundCarga(docente.chFuncao || 0);
+  const funcao = Number(docente.chFuncao || 0);
 
   state.oferta.forEach((oferta) => {
     const carga = calcDisciplinaParaDocente(oferta, docente.id);
@@ -69,67 +56,71 @@ export function calcResumoDocente(docente, state) {
 
   if (acts.projetoPesquisa) pesquisa += defaults.binaryHours.projetoPesquisa;
   if (acts.projetoEnsino) ensino += defaults.binaryHours.projetoEnsino;
-  extensao += Number(acts.extCoordCount || 0) * 8;
-  extensao += Number(acts.extMembroCount || 0) * 4;
-  pesquisa += Number(acts.grupoPesquisaCount || 0) * 1;
-  pesquisa += Number(acts.grupoPesquisaLiderCount || 0) * 2;
+  if (acts.coordProjetoPibic) pesquisa += defaults.binaryHours.coordProjetoPibic;
   if (acts.fiel) comissoes += defaults.binaryHours.fiel;
   if (acts.fieb) comissoes += defaults.binaryHours.fieb;
   if (acts.comiteEtica) comissoes += defaults.binaryHours.comiteEtica;
   comissoes += defaults.nde[acts.nde || "none"] || 0;
-  (acts.outras || []).forEach((item) => { comissoes += Number(item.ch || 0); });
+  ensino += Number(acts.monitoria || 0);
+  extensao += Number(acts.extensaoCoordenacaoQtd || 0) * 8;
+  extensao += Number(acts.extensaoMembroQtd || 0) * 4;
+  pesquisa += acts.grupoPesquisaMembro ? 1 : 0;
+  pesquisa += acts.grupoPesquisaLider ? 2 : 0;
+  const orientTcc = Math.min(Number(acts.orientacoesTcc || 0), 4) * 2;
+  const orientPibic = Math.min(Number(acts.orientacoesPibic || 0) * 2, 8);
+  (acts.outrasComissoes || []).forEach((item) => { comissoes += Number(item.ch || 0); });
 
-  const orientPesquisa = calcOrientacoesEPesquisaDocente(docente, state);
+  sala = roundInt(sala);
+  regencia = roundInt(regencia);
+  pesquisa = roundInt(pesquisa);
+  extensao = roundInt(extensao);
+  ensino = roundInt(ensino);
+  comissoes = roundInt(comissoes);
 
-  sala = roundCarga(sala);
-  regencia = roundCarga(regencia);
-  pesquisa = roundCarga(pesquisa);
-  extensao = roundCarga(extensao);
-  ensino = roundCarga(ensino);
-  comissoes = roundCarga(comissoes);
-
-  const total = roundCarga(sala + regencia + pesquisa + extensao + ensino + orientPesquisa.totalOrientacoesEPesquisa + comissoes + funcao);
+  const total = roundInt(sala + regencia + pesquisa + extensao + ensino + orientTcc + orientPibic + comissoes + funcao);
   const status = sala >= Number(docente.minimoSala || 0) ? "Atende mínimo" : "Abaixo do mínimo";
 
   return {
     docente: docente.nome,
-    sala, regencia, pesquisa, extensao, ensino,
-    orientTcc: orientPesquisa.orientTcc,
-    orientPibic: orientPesquisa.orientPibic,
-    coordProjetoPibic: orientPesquisa.coordProjetoPibic,
-    orientTotal: orientPesquisa.totalOrientacoesEPesquisa,
-    comissoes, funcao, total, minimoSala: docente.minimoSala, status,
+    sala,
+    regencia,
+    pesquisa,
+    extensao,
+    ensino,
+    orientTcc,
+    orientPibic,
+    coordProjetoPibic: acts.coordProjetoPibic ? 8 : 0,
+    orientTotal: roundInt(orientTcc + orientPibic + (acts.coordProjetoPibic ? 8 : 0)),
+    comissoes,
+    funcao,
+    total,
+    minimoSala: docente.minimoSala,
+    status,
   };
 }
 
-function overlap(aStart, aEnd, bStart, bEnd) {
-  return aStart < bEnd && aEnd > bStart;
-}
-function intersect(arr1, arr2) {
-  return arr1.some((id) => arr2.includes(id));
-}
-
-export function detectHorarioConflicts(horarios, oferta) {
-  return horarios.map((item, index) => {
-    const currentStart = timeToMinutes(item.inicio);
-    const currentEnd = timeToMinutes(item.fim);
-    const ofertaAtual = oferta.find((o) => o.id === item.ofertaId);
-    const docentesAtual = getOfertaDocentes(ofertaAtual);
-    const turmaAtual = getOfertaTurma(ofertaAtual);
+export function detectHorarioConflicts(state) {
+  return state.horarios.map((item, index) => {
+    const start = timeToMinutes(item.inicio);
+    const end = timeToMinutes(item.fim);
+    const ofertaAtual = state.oferta.find((o) => o.id === item.ofertaId);
+    const docentesAtual = ofertaAtual?.docentes || [];
+    const turmaAtual = ofertaAtual?.periodo || "";
     let docenteConflict = false;
     let turmaConflict = false;
 
-    horarios.forEach((other, otherIndex) => {
+    state.horarios.forEach((other, otherIndex) => {
       if (index === otherIndex) return;
       if (item.dia !== other.dia || item.turno !== other.turno) return;
       const otherStart = timeToMinutes(other.inicio);
       const otherEnd = timeToMinutes(other.fim);
-      if (!overlap(currentStart, currentEnd, otherStart, otherEnd)) return;
-      const ofertaOther = oferta.find((o) => o.id === other.ofertaId);
-      const docentesOther = getOfertaDocentes(ofertaOther);
-      const turmaOther = getOfertaTurma(ofertaOther);
-      if (docentesAtual.length && docentesOther.length && intersect(docentesAtual, docentesOther)) docenteConflict = true;
-      if (turmaAtual && turmaOther && turmaAtual === turmaOther) turmaConflict = true;
+      const overlap = start < otherEnd && end > otherStart;
+      if (!overlap) return;
+      const ofertaOther = state.oferta.find((o) => o.id === other.ofertaId);
+      const docentesOther = ofertaOther?.docentes || [];
+      const turmaOther = ofertaOther?.periodo || "";
+      if (docentesAtual.some((id) => docentesOther.includes(id))) docenteConflict = true;
+      if (turmaAtual && turmaAtual === turmaOther) turmaConflict = true;
     });
 
     return { id: item.id, docenteConflict, turmaConflict, anyConflict: docenteConflict || turmaConflict };
