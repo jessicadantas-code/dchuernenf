@@ -1,463 +1,1117 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DCH UERN — Enfermagem Caicó</title>
-<style>
-:root{--bg:#f5f7fb;--card:#fff;--text:#17212f;--muted:#667085;--border:#dbe2ea;--primary:#2457c5;--danger:#b42318;--ok:#067647;--warn:#b54708}
-*{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
-.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding:1rem 1.25rem;background:#0f172a;color:#fff}
-.brand-wrap{display:flex;align-items:center;gap:1rem}.brand-logo{width:110px;height:auto;background:#fff;border-radius:.8rem;padding:.45rem .7rem}
-.eyebrow{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:#cbd5e1;margin-bottom:.25rem}.topbar h1{margin:0 0 .25rem}.topbar p{margin:0;color:#cbd5e1}
-.topbar-actions{display:flex;gap:.5rem;flex-wrap:wrap}
-button,.file-label{padding:.6rem .85rem;border:1px solid var(--border);background:#fff;border-radius:.65rem;cursor:pointer}
-button.danger{background:#fff5f5;color:var(--danger)}
-.tabs{display:flex;gap:.5rem;padding:1rem 1.25rem .25rem;flex-wrap:wrap}
-.tab{background:#eef2ff;border:1px solid #c7d2fe;border-radius:.65rem}
-.tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-main{padding:0 20px 24px;max-width:1800px;margin:0 auto}
-.card{background:var(--card);border:1px solid var(--border);border-radius:.9rem;padding:.8rem;overflow:auto;box-shadow:0 2px 10px rgba(15,23,42,.04)}
-.bar{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:.75rem;flex-wrap:wrap}
-.help{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;padding:.8rem 1rem;border-radius:.8rem;margin-bottom:.8rem}
-table{width:100%;border-collapse:collapse} th,td{padding:.55rem;border-bottom:1px solid var(--border);vertical-align:top} th{text-align:left;background:#f8fafc}
-input,select,textarea{width:100%;padding:.5rem .6rem;border:1px solid var(--border);border-radius:.6rem;background:#fff}
-.small{font-size:.85rem;color:var(--muted)} .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.8rem}
-.doc-card,.block-card{background:#fff;border:1px solid var(--border);border-radius:.9rem;padding:1rem}
-.choice-wrap{display:flex;flex-wrap:wrap;gap:.35rem;min-width:250px}.choice{display:flex;align-items:center;gap:.35rem;background:#f8fafc;border:1px solid var(--border);border-radius:999px;padding:.22rem .5rem;font-size:.88rem}
-.badge{display:inline-block;padding:.25rem .5rem;border-radius:999px;font-size:.8rem}.badge.ok{background:#ecfdf3;color:var(--ok)}.badge.bad{background:#fef3f2;color:var(--danger)}.badge.warn{background:#fff7ed;color:var(--warn)}
-.filters{display:flex;gap:.75rem;flex-wrap:wrap}.filters>div{min-width:220px}
-.grade-table th,.grade-table td{text-align:left;vertical-align:top;min-width:160px}.grade-cell{min-height:90px}
-.slot-card{border:1px solid var(--border);border-radius:.7rem;padding:.45rem .55rem;background:#f8fafc;margin-bottom:.4rem}.slot-title{font-weight:700;font-size:.9rem}.slot-sub{font-size:.8rem;color:var(--muted)}
-.resumo-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.resumo-card{background:#fff;border:1px solid #dbe2ea;border-radius:12px;padding:14px}.resumo-card h3{margin-top:0;color:#0f2f6b}.resumo-card.destaque{border-color:#2457c5}
-.comissao-item{display:grid;grid-template-columns:2fr 1fr auto;gap:.5rem;align-items:end;margin-bottom:.5rem}
-.block-meter{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden}.block-meter>span{display:block;height:100%;background:#2457c5}
-.horario-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr auto;gap:.5rem;align-items:end}.period-chip{display:inline-block;padding:.2rem .45rem;border-radius:.5rem;background:#eef2ff;font-size:.8rem}
-.inline-actions{display:flex;gap:.5rem;align-items:end;flex-wrap:wrap}
-@media(max-width:820px){.topbar{flex-direction:column}.brand-wrap{align-items:flex-start}.brand-logo{width:92px}.comissao-item,.horario-grid{grid-template-columns:1fr}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DCH UERN - Enfermagem Caicó</title>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-<header class="topbar">
-  <div class="brand-wrap">
-    <img src="./uern_logo.png" alt="Logo UERN" class="brand-logo">
-    <div>
-      <div class="eyebrow">Universidade do Estado do Rio Grande do Norte</div>
-      <h1>DCH UERN</h1>
-      <p>Curso de Enfermagem — Campus Caicó</p>
+  <header class="topbar">
+    <div class="brand-wrap">
+      <img src="./uern_logo.png" alt="Logo UERN" class="brand-logo" />
+      <div>
+        <div class="eyebrow">Universidade do Estado do Rio Grande do Norte</div>
+        <h1>DCH UERN</h1>
+        <p>Curso de Enfermagem — Campus Caicó</p>
+      </div>
     </div>
-  </div>
-  <div class="topbar-actions">
-    <button id="btnSeed">Carregar exemplo</button>
-    <button id="btnExport">Exportar JSON</button>
-    <label class="file-label">Importar JSON<input id="btnImport" type="file" accept=".json" hidden></label>
-    <button id="btnReset" class="danger">Limpar tudo</button>
-  </div>
-</header>
-<nav class="tabs" id="tabs"></nav>
-<main id="app"></main>
+
+    <div class="topbar-actions">
+      <button id="btnSeed">Carregar exemplo</button>
+      <button id="btnExportJson">Exportar JSON</button>
+      <label class="file-label">
+        Importar JSON
+        <input id="inputImport" type="file" accept=".json" hidden />
+      </label>
+      <button id="btnReset" class="danger">Limpar tudo</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs"></nav>
+
+  <main>
+    <section id="panel-docentes" class="panel active"></section>
+    <section id="panel-oferta" class="panel"></section>
+    <section id="panel-atividades" class="panel"></section>
+    <section id="panel-resumo" class="panel"></section>
+    <section id="panel-horarios" class="panel"></section>
+    <section id="panel-grade" class="panel"></section>
+  </main>
 
 <script>
-const STORAGE_KEY='dch_uern_pkg_singlefile_v2';
-const BLOCKS={
-  "Manhã":[["1","07:00–07:50"],["2","07:50–08:40"],["3","08:40–09:30"],["4","09:30–10:20"],["5","10:20–11:10"],["6","11:10–12:00"]],
-  "Tarde":[["1","13:00–13:50"],["2","13:50–14:40"],["3","14:40–15:30"],["4","15:30–16:20"],["5","16:20–17:10"],["6","17:10–18:00"]],
-  "Noite":[["1","18:30–19:20"],["2","19:20–20:10"],["3","20:10–21:00"],["4","21:00–21:50"]]
+const STORAGE_KEY = "dch_uern_full_fixed_v2";
+
+const tabs = [
+  { key: "docentes", label: "Docentes" },
+  { key: "oferta", label: "Oferta" },
+  { key: "atividades", label: "Atividades" },
+  { key: "resumo", label: "Resumo" },
+  { key: "horarios", label: "Horários" },
+  { key: "grade", label: "Grade semanal" },
+];
+
+const dias = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+const blocosPorTurno = {
+  "Manhã": [
+    { numero: 1, faixa: "07:00–07:50" },
+    { numero: 2, faixa: "07:50–08:40" },
+    { numero: 3, faixa: "08:40–09:30" },
+    { numero: 4, faixa: "09:30–10:20" },
+    { numero: 5, faixa: "10:20–11:10" },
+    { numero: 6, faixa: "11:10–12:00" },
+  ],
+  "Tarde": [
+    { numero: 1, faixa: "13:00–13:50" },
+    { numero: 2, faixa: "13:50–14:40" },
+    { numero: 3, faixa: "14:40–15:30" },
+    { numero: 4, faixa: "15:30–16:20" },
+    { numero: 5, faixa: "16:20–17:10" },
+    { numero: 6, faixa: "17:10–18:00" },
+  ],
+  "Noite": [
+    { numero: 1, faixa: "18:30–19:20" },
+    { numero: 2, faixa: "19:20–20:10" },
+    { numero: 3, faixa: "20:10–21:00" },
+    { numero: 4, faixa: "21:00–21:50" },
+  ],
 };
-const TABS=[["docentes","Docentes"],["oferta","Oferta 26.1"],["atividades","Atividades"],["resumo","Resumo"],["horarios","Horários"],["grade","Grade semanal"],["relatorios","Relatórios"]];
-const uid=()=>Math.random().toString(36).slice(2,10);
-const round=v=>Math.round(Number(v||0));
-const weeklyHours=total=>Number(total||0)/15;
-const dias=['Segunda','Terça','Quarta','Quinta','Sexta'];
 
-let state={
-  tab:'docentes',
-  docentes:[],
-  oferta:[],
-  atividades:{},
-  horarios:[],
-  gradeView:'turma',
-  gradeTurma:'',
-  gradeDocente:'',
-  resumoDocente:'',
-  relPeriodo:'P2',
-  relDocente:''
+const state = {
+  docentes: [],
+  oferta: [],
+  atividades: {},
+  horarios: [],
+  activeTab: "docentes",
+  gradeFilters: {
+    view: "turma",
+    turma: "",
+    docente: "",
+  },
+  resumoDocenteId: "",
 };
 
-function downloadJson(filename, data){
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
 }
-function csvEscape(v){ const raw=String(v??''); const esc=raw.replace(/"/g,'""'); return /[",;\n]/.test(esc)?`"${esc}"`:esc; }
-function downloadCsv(filename, rows){
-  const csv="\uFEFF"+rows.map(r=>r.map(csvEscape).join(';')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+function roundInt(value) {
+  return Math.round(Number(value || 0));
 }
-function seed(){
-  state.docentes=[
-    ["Jéssica Tinôco",4,"Chefe do departamento",4],["Jéssica Naiara",8,"Coord. Profsaude",8],["Maura Vanessa",4,"Chefe cursos Lato",4],
-    ["Rosangela Diniz",8,"Proex",8],["Linda Kátia",8,"",0],["Clécio Andre",8,"",0],["Ildone Fortes",8,"",0],["Izabel Calixta",8,"",0],
-    ["Liria Alvino",12,"",0],["Vinicius",20,"",0],["Raquel Mirtes",8,"",0],["CRISTYANNE SAMARA",8,"",0],["Roberta Kalily",8,"",0],
-    ["Roberta Luna",8,"",0],["Dulcian Azevedo",8,"Vice Profsaude",8],["Erika Fernandes",12,"",0],["Regilene Alves",8,"Vice chefe",8]
-  ].map(([nome,minimoSala,funcao,chFuncao])=>({id:uid(),nome,regime:'40h',minimoSala,funcao,chFuncao}));
-  state.oferta=[
-    {id:uid(),periodo:'P2',codigo:'CAC0042',nome:'Módulo morfofuncional I',teorica:105,pratica:45,total:150,docentes:[]},
-    {id:uid(),periodo:'P4',codigo:'CAC0048',nome:'Semiologia da enfermagem',teorica:45,pratica:45,total:90,docentes:[]},
-    {id:uid(),periodo:'P6',codigo:'CAC0058',nome:'Saúde sexual e reprodutiva',teorica:120,pratica:60,total:180,docentes:[]},
-    {id:uid(),periodo:'P8',codigo:'CAC0063',nome:'Cuidados clínicos e intensivos',teorica:150,pratica:45,total:195,docentes:[]},
-    {id:uid(),periodo:'OPT',codigo:'OPT-001',nome:'Disciplina optativa',teorica:45,pratica:0,total:45,docentes:[]},
-    {id:uid(),periodo:'UCE',codigo:'UCE-001',nome:'UCE',teorica:15,pratica:45,total:60,docentes:[]}
-  ];
-  state.oferta[0].docentes=[state.docentes[0].id,state.docentes[1].id];
-  state.oferta[1].docentes=[state.docentes[2].id];
-  state.oferta[2].docentes=[state.docentes[3].id,state.docentes[4].id];
-  state.oferta[3].docentes=[state.docentes[5].id,state.docentes[6].id];
-
-  state.horarios=[
-    {id:uid(),ofertaId:state.oferta[0].id,dia:'Segunda',turno:'Manhã',blocoInicial:1,qtdBlocos:5},
-    {id:uid(),ofertaId:state.oferta[0].id,dia:'Quarta',turno:'Manhã',blocoInicial:1,qtdBlocos:5},
-    {id:uid(),ofertaId:state.oferta[1].id,dia:'Terça',turno:'Manhã',blocoInicial:3,qtdBlocos:3},
-    {id:uid(),ofertaId:state.oferta[1].id,dia:'Quinta',turno:'Manhã',blocoInicial:3,qtdBlocos:3}
-  ];
-  state.gradeView='turma'; state.gradeTurma='P2'; state.gradeDocente=''; state.resumoDocente=state.docentes[0].id; state.relDocente=state.docentes[0].id; state.relPeriodo='P2';
+function weeklyHours(totalHours, weeks = 15) {
+  return Number(totalHours || 0) / Number(weeks || 15);
+}
+function blocksFromHours(totalHours, weeks = 15) {
+  return roundInt(weeklyHours(totalHours, weeks));
+}
+function isUCE(oferta) {
+  return (oferta.codigo || "").startsWith("UCE") || (oferta.nome || "").toUpperCase().includes("UCE");
+}
+function docenteNome(id) {
+  return state.docentes.find((d) => d.id === id)?.nome || "";
+}
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return false;
+  const parsed = JSON.parse(raw);
+  Object.assign(state, parsed);
   syncAtividades();
+  return true;
 }
-function syncAtividades(){
-  const ids=new Set(state.docentes.map(d=>d.id));
-  Object.keys(state.atividades).forEach(id=>{ if(!ids.has(id)) delete state.atividades[id]; });
-  state.docentes.forEach(d=>{
-    if(!state.atividades[d.id]){
-      state.atividades[d.id]={
-        pesquisaInstitucionalizadaQtd:0, coordProjetoPibicQtd:0, monitoriaQtd:0, extensaoCoordenacaoQtd:0, extensaoMembroQtd:0,
-        grupoPesquisaMembro:false, grupoPesquisaLider:false, nde:'none', fiel:false, fieb:false, comiteEtica:false,
-        orientacoesTcc:0, orientacoesMestrado:0, outrasComissoes:[]
+function downloadJson(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+}
+function syncAtividades() {
+  const ids = new Set(state.docentes.map((d) => d.id));
+  Object.keys(state.atividades).forEach((id) => {
+    if (!ids.has(id)) delete state.atividades[id];
+  });
+  state.docentes.forEach((docente) => {
+    if (!state.atividades[docente.id]) {
+      state.atividades[docente.id] = {
+        pesquisaInstitucionalizadaQtd: 0,
+        coordProjetoPibicQtd: 0,
+        monitoriaQtd: 0,
+        extensaoCoordenacaoQtd: 0,
+        extensaoMembroQtd: 0,
+        grupoPesquisaMembro: false,
+        grupoPesquisaLider: false,
+        nde: "none",
+        fiel: false,
+        fieb: false,
+        comiteEtica: false,
+        orientacoesTcc: 0,
+        orientacoesMestrado: 0,
+        outrasComissoes: [],
       };
     }
   });
 }
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-function load(){ const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return false; state=JSON.parse(raw); syncAtividades(); return true; }
+function seedData() {
+  state.docentes = [
+    ["Jéssica Tinôco", 4, "Chefe do departamento", 4],
+    ["Jéssica Naiara", 8, "Coord. Profsaude", 8],
+    ["Maura Vanessa", 4, "Chefe cursos Lato", 4],
+    ["Rosangela Diniz", 8, "Proex", 8],
+    ["Linda Kátia", 8, "", 0],
+    ["Clécio Andre", 8, "", 0],
+    ["Ildone Fortes", 8, "", 0],
+    ["Izabel Calixta", 8, "", 0],
+    ["Liria Alvino", 12, "", 0],
+    ["Vinicius", 20, "", 0],
+    ["Raquel Mirtes", 8, "", 0],
+    ["CRISTYANNE SAMARA", 8, "", 0],
+    ["Roberta Kalily", 8, "", 0],
+    ["Roberta Luna", 8, "", 0],
+    ["Dulcian Azevedo", 8, "Vice Profsaude", 8],
+    ["Erika Fernandes", 12, "", 0],
+    ["Regilene Alves", 8, "Vice chefe", 8],
+  ].map(([nome, minimoSala, funcao, chFuncao]) => ({
+    id: uid(),
+    nome,
+    regime: "40h",
+    minimoSala,
+    funcao,
+    chFuncao,
+  }));
 
-function isUCE(of){ return (of.codigo||'').startsWith('UCE') || (of.nome||'').toUpperCase().includes('UCE'); }
-function blocksNeeded(of){
-  if(isUCE(of)) return 1;
-  const total = Number(of.total || (Number(of.teorica||0)+Number(of.pratica||0)));
-  return round(total/15);
+  state.oferta = [
+    {
+      id: uid(),
+      periodo: "P2",
+      codigo: "CAC0042",
+      nome: "Módulo morfofuncional I",
+      teorica: 105,
+      pratica: 45,
+      total: 150,
+      docentes: [],
+    },
+    {
+      id: uid(),
+      periodo: "P4",
+      codigo: "CAC0048",
+      nome: "Semiologia da enfermagem",
+      teorica: 45,
+      pratica: 45,
+      total: 90,
+      docentes: [],
+    },
+    {
+      id: uid(),
+      periodo: "P6",
+      codigo: "CAC0058",
+      nome: "Saúde sexual e reprodutiva",
+      teorica: 120,
+      pratica: 60,
+      total: 180,
+      docentes: [],
+    },
+    {
+      id: uid(),
+      periodo: "P8",
+      codigo: "CAC0063",
+      nome: "Cuidados clínicos e intensivos",
+      teorica: 150,
+      pratica: 45,
+      total: 195,
+      docentes: [],
+    },
+  ];
+
+  state.oferta[0].docentes = [state.docentes[0].id, state.docentes[1].id];
+  state.oferta[1].docentes = [state.docentes[2].id];
+  state.oferta[2].docentes = [state.docentes[3].id, state.docentes[4].id];
+  state.oferta[3].docentes = [state.docentes[5].id, state.docentes[6].id];
+
+  state.horarios = [
+    { id: uid(), ofertaId: state.oferta[0].id, dia: "Segunda", turno: "Manhã", blocoInicial: 1, qtdBlocos: 5 },
+    { id: uid(), ofertaId: state.oferta[0].id, dia: "Quarta", turno: "Manhã", blocoInicial: 1, qtdBlocos: 5 },
+    { id: uid(), ofertaId: state.oferta[1].id, dia: "Terça", turno: "Manhã", blocoInicial: 3, qtdBlocos: 3 },
+    { id: uid(), ofertaId: state.oferta[1].id, dia: "Quinta", turno: "Manhã", blocoInicial: 3, qtdBlocos: 3 },
+    { id: uid(), ofertaId: state.oferta[2].id, dia: "Segunda", turno: "Tarde", blocoInicial: 1, qtdBlocos: 6 },
+    { id: uid(), ofertaId: state.oferta[2].id, dia: "Quinta", turno: "Tarde", blocoInicial: 1, qtdBlocos: 6 },
+  ];
+
+  state.gradeFilters = { view: "turma", turma: "P2", docente: "" };
+  state.resumoDocenteId = state.docentes[0].id;
+  syncAtividades();
 }
-function blocksUsed(ofertaId){ return state.horarios.filter(h=>h.ofertaId===ofertaId).reduce((a,h)=>a+Number(h.qtdBlocos||0),0); }
-function discCarga(of,docId){
-  if(!(of.docentes||[]).includes(docId)) return {sala:0,regencia:0};
-  if(isUCE(of)) return {sala:1,regencia:0};
-  const n=(of.docentes||[]).length||1;
-  const t=(weeklyHours(of.teorica)/n);
-  const p=weeklyHours(of.pratica);
-  return {sala:round(t+p), regencia:round(t+(p*0.5))};
-}
-function acts(docId){
-  const a=state.atividades[docId]||{};
-  const outras=(a.outrasComissoes||[]).reduce((s,it)=>s+Number(it.ch||0),0);
-  const nde = ({none:0,membro:2,coordenacao:8}[a.nde||'none']||0);
+function calcDisciplinaParaDocente(oferta, docenteId) {
+  if (!(oferta.docentes || []).includes(docenteId)) return { sala: 0, regencia: 0 };
+  if (isUCE(oferta)) return { sala: 1, regencia: 0 };
+  const qtdDocentes = (oferta.docentes || []).length || 1;
+  const teoriaSemanal = weeklyHours(oferta.teorica, 15) / qtdDocentes;
+  const praticaSemanal = weeklyHours(oferta.pratica, 15);
   return {
-    pesquisaInstitucionalizada:(+a.pesquisaInstitucionalizadaQtd||0)*4,
-    coordProjetoPibic:(+a.coordProjetoPibicQtd||0)*8,
-    monitoria:(+a.monitoriaQtd||0)*4,
-    extensao:(+a.extensaoCoordenacaoQtd||0)*8 + (+a.extensaoMembroQtd||0)*4,
-    grupoPesquisa:(a.grupoPesquisaMembro?1:0) + (a.grupoPesquisaLider?2:0),
-    orientTcc:(+a.orientacoesTcc||0)*2,
-    orientMestrado:(+a.orientacoesMestrado||0)*3,
-    comissoes: outras + nde + (a.fiel?2:0) + (a.fieb?2:0) + (a.comiteEtica?8:0),
-    nde, fiel:(a.fiel?2:0), fieb:(a.fieb?2:0), comiteEtica:(a.comiteEtica?8:0), outras
+    sala: roundInt(teoriaSemanal + praticaSemanal),
+    regencia: roundInt(teoriaSemanal + (praticaSemanal * 0.5)),
   };
 }
-function resumoDocente(doc){
-  let sala=0, regencia=0;
-  const disciplinas = state.oferta.filter(of=>(of.docentes||[]).includes(doc.id)).map(of=>{
-    const c=discCarga(of,doc.id); sala+=c.sala; regencia+=c.regencia;
-    return {periodo:of.periodo,codigo:of.codigo,disciplina:of.nome,sala:c.sala,regencia:c.regencia};
-  });
-  const a=acts(doc.id);
+function calcBlocosNecessarios(oferta) {
+  if (isUCE(oferta)) return 1;
+  return blocksFromHours(oferta.total || (Number(oferta.teorica || 0) + Number(oferta.pratica || 0)), 15);
+}
+function calcAtividadesDocente(docenteId) {
+  const acts = state.atividades[docenteId] || {};
+  const nde = { none: 0, membro: 2, coordenacao: 8 }[acts.nde || "none"] || 0;
+  const outrasComissoes = (acts.outrasComissoes || []).reduce((acc, item) => acc + Number(item.ch || 0), 0);
   return {
-    docente:doc.nome,
-    sala:round(sala), regencia:round(regencia),
-    monitoria:a.monitoria, pesquisa:round(a.pesquisaInstitucionalizada+a.grupoPesquisa),
-    pesquisaInstitucionalizada:a.pesquisaInstitucionalizada, grupoPesquisa:a.grupoPesquisa, coordProjetoPibic:a.coordProjetoPibic,
-    extensao:a.extensao, orientTcc:a.orientTcc, orientMestrado:a.orientMestrado, comissoes:a.comissoes,
-    funcao:Number(doc.chFuncao||0),
-    total:round(sala+regencia+a.monitoria+a.pesquisaInstitucionalizada+a.grupoPesquisa+a.coordProjetoPibic+a.extensao+a.orientTcc+a.orientMestrado+a.comissoes+Number(doc.chFuncao||0)),
-    status: round(sala) >= Number(doc.minimoSala||0) ? 'Atende mínimo' : 'Abaixo do mínimo',
-    disciplinas
+    pesquisaInstitucionalizada: Number(acts.pesquisaInstitucionalizadaQtd || 0) * 4,
+    coordProjetoPibic: Number(acts.coordProjetoPibicQtd || 0) * 8,
+    monitoria: Number(acts.monitoriaQtd || 0) * 4,
+    extensao: Number(acts.extensaoCoordenacaoQtd || 0) * 8 + Number(acts.extensaoMembroQtd || 0) * 4,
+    grupoPesquisa: (acts.grupoPesquisaMembro ? 1 : 0) + (acts.grupoPesquisaLider ? 2 : 0),
+    orientTcc: Number(acts.orientacoesTcc || 0) * 2,
+    orientMestrado: Number(acts.orientacoesMestrado || 0) * 3,
+    comissoes: nde + (acts.fiel ? 2 : 0) + (acts.fieb ? 2 : 0) + (acts.comiteEtica ? 8 : 0) + outrasComissoes,
   };
 }
-function expandedSlots(){
-  const slots=[];
-  state.horarios.forEach(h=>{
-    const of=state.oferta.find(o=>o.id===h.ofertaId); if(!of) return;
-    for(let i=0;i<Number(h.qtdBlocos||0);i++){
-      slots.push({hid:h.id,dia:h.dia,turno:h.turno,bloco:Number(h.blocoInicial)+i,periodo:of.periodo,docentes:of.docentes||[],ofertaId:of.id});
-    }
+function calcResumoDocente(docente) {
+  let sala = 0;
+  let regencia = 0;
+
+  state.oferta.forEach((oferta) => {
+    const calc = calcDisciplinaParaDocente(oferta, docente.id);
+    sala += calc.sala;
+    regencia += calc.regencia;
   });
-  return slots;
+
+  const acts = calcAtividadesDocente(docente.id);
+
+  return {
+    sala: roundInt(sala),
+    regencia: roundInt(regencia),
+    monitoria: roundInt(acts.monitoria),
+    pesquisaInstitucionalizada: roundInt(acts.pesquisaInstitucionalizada),
+    grupoPesquisa: roundInt(acts.grupoPesquisa),
+    coordProjetoPibic: roundInt(acts.coordProjetoPibic),
+    extensao: roundInt(acts.extensao),
+    orientTcc: roundInt(acts.orientTcc),
+    orientMestrado: roundInt(acts.orientMestrado),
+    comissoes: roundInt(acts.comissoes),
+    total: roundInt(
+      sala +
+      regencia +
+      acts.monitoria +
+      acts.pesquisaInstitucionalizada +
+      acts.grupoPesquisa +
+      acts.coordProjetoPibic +
+      acts.extensao +
+      acts.orientTcc +
+      acts.orientMestrado +
+      acts.comissoes +
+      Number(docente.chFuncao || 0)
+    ),
+  };
 }
-function conflictMap(){
-  const map={}; state.horarios.forEach(h=>map[h.id]={doc:false,turma:false});
-  const slots=expandedSlots();
-  for(let i=0;i<slots.length;i++){
-    for(let j=i+1;j<slots.length;j++){
-      const a=slots[i], b=slots[j];
-      if(a.dia===b.dia && a.turno===b.turno && a.bloco===b.bloco && a.ofertaId!==b.ofertaId){
-        if(a.periodo && a.periodo===b.periodo){ map[a.hid].turma=true; map[b.hid].turma=true; }
-        if(a.docentes.some(id=>b.docentes.includes(id))){ map[a.hid].doc=true; map[b.hid].doc=true; }
+function detalhamentoDisciplinas(docenteId) {
+  return state.oferta
+    .filter((oferta) => (oferta.docentes || []).includes(docenteId))
+    .map((oferta) => {
+      const calc = calcDisciplinaParaDocente(oferta, docenteId);
+      return {
+        periodo: oferta.periodo,
+        codigo: oferta.codigo,
+        disciplina: oferta.nome,
+        sala: calc.sala,
+        regencia: calc.regencia,
+      };
+    });
+}
+function expandHorarioItem(item) {
+  const oferta = state.oferta.find((o) => o.id === item.ofertaId);
+  if (!oferta) return [];
+  const arr = [];
+  for (let i = 0; i < Number(item.qtdBlocos || 0); i++) {
+    arr.push({
+      horarioId: item.id,
+      ofertaId: item.ofertaId,
+      periodo: oferta.periodo,
+      docentes: oferta.docentes || [],
+      dia: item.dia,
+      turno: item.turno,
+      bloco: Number(item.blocoInicial || 1) + i,
+    });
+  }
+  return arr;
+}
+function detectConflicts() {
+  const expanded = state.horarios.flatMap(expandHorarioItem);
+  const result = {};
+  state.horarios.forEach((h) => {
+    result[h.id] = { docente: false, periodo: false };
+  });
+
+  for (let i = 0; i < expanded.length; i++) {
+    for (let j = i + 1; j < expanded.length; j++) {
+      const a = expanded[i];
+      const b = expanded[j];
+      if (a.horarioId === b.horarioId) continue;
+      if (a.dia !== b.dia || a.turno !== b.turno || a.bloco !== b.bloco) continue;
+
+      if (a.periodo && b.periodo && a.periodo === b.periodo) {
+        result[a.horarioId].periodo = true;
+        result[b.horarioId].periodo = true;
+      }
+
+      if ((a.docentes || []).some((id) => (b.docentes || []).includes(id))) {
+        result[a.horarioId].docente = true;
+        result[b.horarioId].docente = true;
       }
     }
   }
-  return map;
+  return result;
 }
-function slotLabels(turno,start,qtd){
-  return (BLOCKS[turno]||[]).slice(start-1,start-1+qtd).map(x=>x[1]).join('<br>');
+function activateTab(key) {
+  state.activeTab = key;
+  render();
 }
-function docenteName(id){ return state.docentes.find(d=>d.id===id)?.nome || ''; }
+function renderTabs() {
+  const nav = document.getElementById("tabs");
+  nav.innerHTML = tabs.map((tab) => `
+    <button class="tab ${state.activeTab === tab.key ? "active" : ""}" data-tab="${tab.key}">
+      ${tab.label}
+    </button>
+  `).join("");
 
-function renderTabs(){
-  return TABS.map(([k,l])=>`<button class="tab ${state.tab===k?'active':''}" data-tab="${k}">${l}</button>`).join('');
-}
-function renderDocentes(){
-  return `<div class="bar"><h2>Docentes</h2><button id="addDoc">Adicionar docente</button></div>
-  <div class="card"><table><thead><tr><th>Nome</th><th>Regime</th><th>Mínimo sala</th><th>Função</th><th>CH função</th><th></th></tr></thead><tbody>
-  ${state.docentes.map((d,i)=>`<tr>
-    <td><input data-doc="${i}" data-f="nome" value="${d.nome||''}"></td>
-    <td><select data-doc="${i}" data-f="regime"><option value="20h" ${d.regime==='20h'?'selected':''}>20h</option><option value="40h" ${d.regime==='40h'?'selected':''}>40h</option><option value="DE" ${d.regime==='DE'?'selected':''}>DE</option></select></td>
-    <td><input type="number" data-doc="${i}" data-f="minimoSala" value="${d.minimoSala||0}"></td>
-    <td><input data-doc="${i}" data-f="funcao" value="${d.funcao||''}"></td>
-    <td><input type="number" data-doc="${i}" data-f="chFuncao" value="${d.chFuncao||0}"></td>
-    <td><button data-del-doc="${i}">Excluir</button></td>
-  </tr>`).join('')}</tbody></table></div>`;
-}
-function choiceWrap(selected, ofertaIdx){
-  return `<div class="choice-wrap">${state.docentes.map(d=>`<label class="choice"><input type="checkbox" data-off="${ofertaIdx}" data-docid="${d.id}" ${selected.includes(d.id)?'checked':''}><span>${d.nome}</span></label>`).join('')}</div>`;
-}
-function renderOferta(){
-  return `<div class="bar"><h2>Oferta 26.1</h2><button id="addOferta">Adicionar disciplina</button></div>
-  <div class="help">Na aba Horários, o sistema usa blocos semanais de 50 minutos. Ex.: 60h/15 semanas = 4 blocos semanais.</div>
-  <div class="card"><table><thead><tr><th>Período</th><th>Código</th><th>Disciplina</th><th>CH Teórica</th><th>CH Prática</th><th>Blocos/semana</th><th>Docentes</th><th></th></tr></thead><tbody>
-  ${state.oferta.map((o,i)=>`<tr>
-    <td><input data-of="${i}" data-f="periodo" value="${o.periodo||''}"></td>
-    <td><input data-of="${i}" data-f="codigo" value="${o.codigo||''}"></td>
-    <td><input data-of="${i}" data-f="nome" value="${o.nome||''}"></td>
-    <td><input type="number" data-of="${i}" data-f="teorica" value="${o.teorica||0}"></td>
-    <td><input type="number" data-of="${i}" data-f="pratica" value="${o.pratica||0}"></td>
-    <td><strong>${blocksNeeded(o)}</strong></td>
-    <td>${choiceWrap(o.docentes||[],i)}</td>
-    <td><button data-del-of="${i}">Excluir</button></td>
-  </tr>`).join('')}
-  </tbody></table></div>`;
-}
-function renderAtividades(){
-  return `<div class="bar"><h2>Atividades</h2></div>
-  <div class="help">Orientação PIBIC removida. NDE coordenação = 8h; NDE membro = 2h. Comitê de Ética = 8h. Monitoria = 4h por quantidade.</div>
-  <div class="grid">${state.docentes.map(d=>{ const a=state.atividades[d.id];
-    return `<div class="doc-card"><h3>${d.nome}</h3>
-      <div class="grid">
-        <div><label>Pesquisa institucionalizada</label><input type="number" data-act="${d.id}" data-f="pesquisaInstitucionalizadaQtd" value="${a.pesquisaInstitucionalizadaQtd||0}"></div>
-        <div><label>Coordenação PIBIC</label><input type="number" data-act="${d.id}" data-f="coordProjetoPibicQtd" value="${a.coordProjetoPibicQtd||0}"></div>
-        <div><label>Monitoria</label><input type="number" data-act="${d.id}" data-f="monitoriaQtd" value="${a.monitoriaQtd||0}"></div>
-        <div><label>Extensão coordenação</label><input type="number" data-act="${d.id}" data-f="extensaoCoordenacaoQtd" value="${a.extensaoCoordenacaoQtd||0}"></div>
-        <div><label>Extensão membro</label><input type="number" data-act="${d.id}" data-f="extensaoMembroQtd" value="${a.extensaoMembroQtd||0}"></div>
-        <div><label>NDE</label><select data-act="${d.id}" data-f="nde"><option value="none" ${a.nde==='none'?'selected':''}>Não</option><option value="membro" ${a.nde==='membro'?'selected':''}>Membro</option><option value="coordenacao" ${a.nde==='coordenacao'?'selected':''}>Coordenação</option></select></div>
-        <label><input type="checkbox" data-act="${d.id}" data-f="grupoPesquisaMembro" ${a.grupoPesquisaMembro?'checked':''}> Grupo de pesquisa membro</label>
-        <label><input type="checkbox" data-act="${d.id}" data-f="grupoPesquisaLider" ${a.grupoPesquisaLider?'checked':''}> Grupo de pesquisa líder</label>
-        <label><input type="checkbox" data-act="${d.id}" data-f="fiel" ${a.fiel?'checked':''}> FIEL</label>
-        <label><input type="checkbox" data-act="${d.id}" data-f="fieb" ${a.fieb?'checked':''}> FIEB</label>
-        <label><input type="checkbox" data-act="${d.id}" data-f="comiteEtica" ${a.comiteEtica?'checked':''}> Comitê de Ética</label>
-        <div><label>Orientações TCC</label><input type="number" data-act="${d.id}" data-f="orientacoesTcc" value="${a.orientacoesTcc||0}"></div>
-        <div><label>Orientações Mestrado</label><input type="number" data-act="${d.id}" data-f="orientacoesMestrado" value="${a.orientacoesMestrado||0}"></div>
-      </div>
-      <div style="margin-top:1rem">
-        <div class="bar"><h4>Outras comissões</h4><button data-add-com="${d.id}">Adicionar</button></div>
-        ${(a.outrasComissoes||[]).map((it,idx)=>`<div class="comissao-item">
-          <div><label>Nome</label><input data-com-doc="${d.id}" data-idx="${idx}" data-kind="nome" value="${it.nome||''}"></div>
-          <div><label>CH</label><input type="number" data-com-doc="${d.id}" data-idx="${idx}" data-kind="ch" value="${it.ch||0}"></div>
-          <div><button data-del-com="${d.id}" data-idx="${idx}">Remover</button></div>
-        </div>`).join('')}
-      </div>
-    </div>`;
-  }).join('')}</div>`;
-}
-function renderResumo(){
-  if(!state.resumoDocente && state.docentes[0]) state.resumoDocente=state.docentes[0].id;
-  const d=state.docentes.find(x=>x.id===state.resumoDocente); if(!d) return '<div class="small">Sem docentes</div>';
-  const r=resumoDocente(d);
-  return `<div class="bar"><h2>Resumo individual</h2><div style="min-width:280px"><select id="selResumo">${state.docentes.map(x=>`<option value="${x.id}" ${x.id===state.resumoDocente?'selected':''}>${x.nome}</option>`).join('')}</select></div></div>
-  <div class="resumo-cards">
-    <div class="resumo-card"><h3>Ensino</h3><p>Sala de aula: <strong>${r.sala}</strong></p><p>Regência: <strong>${r.regencia}</strong></p><p>Monitoria: <strong>${r.monitoria}</strong></p></div>
-    <div class="resumo-card"><h3>Pesquisa</h3><p>Pesquisa institucionalizada: <strong>${r.pesquisaInstitucionalizada}</strong></p><p>Grupo de pesquisa: <strong>${r.grupoPesquisa}</strong></p><p>Coord. PIBIC: <strong>${r.coordProjetoPibic}</strong></p></div>
-    <div class="resumo-card"><h3>Extensão</h3><p><strong>${r.extensao}</strong></p></div>
-    <div class="resumo-card"><h3>Orientações</h3><p>TCC: <strong>${r.orientTcc}</strong></p><p>Mestrado: <strong>${r.orientMestrado}</strong></p></div>
-    <div class="resumo-card"><h3>Comissões</h3><p><strong>${r.comissoes}</strong></p></div>
-    <div class="resumo-card destaque"><h3>Total</h3><p><strong>${r.total}</strong></p></div>
-  </div>
-  <div class="card" style="margin-top:1rem"><div class="bar"><h3>Disciplinas do docente</h3></div>
-    <table><thead><tr><th>Período</th><th>Código</th><th>Disciplina</th><th>CH sala</th><th>CH regência</th></tr></thead>
-    <tbody>${r.disciplinas.map(it=>`<tr><td>${it.periodo}</td><td>${it.codigo}</td><td>${it.disciplina}</td><td>${it.sala}</td><td>${it.regencia}</td></tr>`).join('')}</tbody></table>
-  </div>`;
-}
-function renderHorarios(){
-  const conf=conflictMap();
-  return `<div class="bar"><h2>Horários por blocos de 50 minutos</h2></div>
-  <div class="help">Disciplinas maiores podem ser distribuídas em mais de um dia da semana. Ex.: Morfo I = 10 blocos, como 5 na segunda e 5 na quarta.</div>
-  ${state.oferta.map(o=>{
-    const used=blocksUsed(o.id), need=blocksNeeded(o), saldo=need-used, pct=need?Math.min(100,(used/need)*100):0;
-    const rel=state.horarios.filter(h=>h.ofertaId===o.id);
-    const docs=(o.docentes||[]).map(docenteName).filter(Boolean).join(', ');
-    return `<div class="block-card">
-      <div class="bar">
-        <div><strong>${o.nome}</strong> <span class="period-chip">${o.periodo}</span><div class="small">${o.codigo} • ${docs||'Sem docentes'}</div></div>
-        <div class="small">Blocos exigidos: <strong>${need}</strong> • distribuídos: <strong>${used}</strong> • saldo: <strong>${saldo}</strong></div>
-      </div>
-      <div class="block-meter"><span style="width:${pct}%"></span></div>
-      <div class="horario-grid" style="margin-top:.8rem">
-        <div><label>Dia</label><select data-dia="${o.id}">${dias.map(d=>`<option value="${d}">${d}</option>`).join('')}</select></div>
-        <div><label>Turno</label><select data-turno="${o.id}">${Object.keys(BLOCKS).map(t=>`<option value="${t}">${t}</option>`).join('')}</select></div>
-        <div><label>Bloco inicial</label><select data-bloco="${o.id}">${BLOCKS['Manhã'].map(b=>`<option value="${b[0]}">${b[0]}</option>`).join('')}</select></div>
-        <div><label>Qtd. blocos</label><input type="number" min="1" max="6" value="1" data-qtd="${o.id}"></div>
-        <div><button data-add-hor="${o.id}">Adicionar</button></div>
-      </div>
-      ${rel.length?`<table style="margin-top:.6rem"><thead><tr><th>Dia</th><th>Turno</th><th>Bloco inicial</th><th>Qtd</th><th>Faixas</th><th>Status</th><th></th></tr></thead><tbody>
-      ${rel.map(h=>{
-        const c=conf[h.id]||{doc:false,turma:false}; let badge='<span class="badge ok">OK</span>';
-        if(c.doc&&c.turma) badge='<span class="badge bad">Docente + Período</span>';
-        else if(c.doc) badge='<span class="badge bad">Docente</span>';
-        else if(c.turma) badge='<span class="badge warn">Período</span>';
-        return `<tr><td>${h.dia}</td><td>${h.turno}</td><td>${h.blocoInicial}</td><td>${h.qtdBlocos}</td><td>${slotLabels(h.turno,Number(h.blocoInicial),Number(h.qtdBlocos))}</td><td>${badge}</td><td><button data-del-hor="${h.id}">Excluir</button></td></tr>`;
-      }).join('')}</tbody></table>`:`<div class="small" style="margin-top:.6rem">Sem distribuição ainda.</div>`}
-    </div>`;
-  }).join('')}`;
-}
-function renderGrade(){
-  const filtered=state.horarios.filter(h=>{
-    const o=state.oferta.find(x=>x.id===h.ofertaId); if(!o) return false;
-    return state.gradeView==='turma' ? (!state.gradeTurma || o.periodo===state.gradeTurma) : (!state.gradeDocente || (o.docentes||[]).includes(state.gradeDocente));
+  nav.querySelectorAll(".tab").forEach((btn) => {
+    btn.onclick = () => activateTab(btn.dataset.tab);
   });
-  return `<div class="bar"><h2>Grade semanal</h2>
-    <div class="filters">
-      <div><label>Visualizar por</label><select id="gradeView"><option value="turma" ${state.gradeView==='turma'?'selected':''}>Turma</option><option value="docente" ${state.gradeView==='docente'?'selected':''}>Docente</option></select></div>
-      <div id="wrapTurma" style="display:${state.gradeView==='turma'?'block':'none'}"><label>Turma</label><select id="gradeTurma"><option value="">Todas</option>${[...new Set(state.oferta.map(o=>o.periodo).filter(Boolean))].map(t=>`<option value="${t}" ${state.gradeTurma===t?'selected':''}>${t}</option>`).join('')}</select></div>
-      <div id="wrapDoc" style="display:${state.gradeView==='docente'?'block':'none'}"><label>Docente</label><select id="gradeDoc"><option value="">Todos</option>${state.docentes.map(d=>`<option value="${d.id}" ${state.gradeDocente===d.id?'selected':''}>${d.nome}</option>`).join('')}</select></div>
-    </div></div>
-    <div class="card"><table class="grade-table"><thead><tr><th>Turno/Bloco</th>${dias.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>
-    ${Object.entries(BLOCKS).map(([turno,slots])=>slots.map(slot=>`<tr><th>${turno} • ${slot[0]}<br><span class="small">${slot[1]}</span></th>
-      ${dias.map(dia=>{
-        const hits=filtered.filter(h=>h.dia===dia && h.turno===turno && Number(slot[0])>=Number(h.blocoInicial) && Number(slot[0])<Number(h.blocoInicial)+Number(h.qtdBlocos));
-        return `<td class="grade-cell">${hits.map(h=>{ const o=state.oferta.find(x=>x.id===h.ofertaId); const docs=(o.docentes||[]).map(docenteName).filter(Boolean).join(', '); return `<div class="slot-card"><div class="slot-title">${o.nome}</div><div class="slot-sub">${o.periodo}</div><div class="slot-sub">${docs}</div></div>`; }).join('')}</td>`;
-      }).join('')}
-    </tr>`).join('')).join('')}
-    </tbody></table></div>`;
 }
-function renderRelatorios(){
-  if(!state.relDocente && state.docentes[0]) state.relDocente=state.docentes[0].id;
-  const d=state.docentes.find(x=>x.id===state.relDocente);
-  const r=d?resumoDocente(d):null;
-  const all=state.docentes.map(d=>({docente:d.nome,...resumoDocente(d)}));
-  const periodos=[...new Set(state.oferta.map(o=>o.periodo).filter(Boolean))];
-  const hp=state.horarios.filter(h=>{const o=state.oferta.find(x=>x.id===h.ofertaId); return o && o.periodo===state.relPeriodo;});
-  return `<div class="bar"><h2>Relatórios</h2></div>
-  <div class="card" style="margin-bottom:.8rem">
-    <div class="bar"><h3>Quadro resumo por docente</h3><div class="inline-actions"><select id="relDoc">${state.docentes.map(x=>`<option value="${x.id}" ${x.id===state.relDocente?'selected':''}>${x.nome}</option>`).join('')}</select><button id="csvDoc">CSV</button></div></div>
-    ${r?`<table><thead><tr><th>Docente</th><th>Sala</th><th>Regência</th><th>Monitoria</th><th>Pesquisa</th><th>Coord. PIBIC</th><th>Extensão</th><th>Orient. TCC</th><th>Orient. Mestrado</th><th>Comissões</th><th>Função</th><th>Total</th></tr></thead><tbody><tr><td>${r.docente}</td><td>${r.sala}</td><td>${r.regencia}</td><td>${r.monitoria}</td><td>${r.pesquisa}</td><td>${r.coordProjetoPibic}</td><td>${r.extensao}</td><td>${r.orientTcc}</td><td>${r.orientMestrado}</td><td>${r.comissoes}</td><td>${r.funcao}</td><td>${r.total}</td></tr></tbody></table>`:''}
-  </div>
-  <div class="card" style="margin-bottom:.8rem">
-    <div class="bar"><h3>Quadro resumo de todos os docentes</h3><button id="csvTodos">CSV</button></div>
-    <table><thead><tr><th>Docente</th><th>Sala</th><th>Regência</th><th>Monitoria</th><th>Pesquisa</th><th>Coord. PIBIC</th><th>Extensão</th><th>Orient.</th><th>Comissões</th><th>Função</th><th>Total</th><th>Status</th></tr></thead><tbody>
-    ${all.map(r=>`<tr><td>${r.docente}</td><td>${r.sala}</td><td>${r.regencia}</td><td>${r.monitoria}</td><td>${r.pesquisa}</td><td>${r.coordProjetoPibic}</td><td>${r.extensao}</td><td>${r.orientTcc+r.orientMestrado}</td><td>${r.comissoes}</td><td>${r.funcao}</td><td>${r.total}</td><td>${r.status}</td></tr>`).join('')}
-    </tbody></table>
-  </div>
-  <div class="card">
-    <div class="bar"><h3>Quadro de horários por período</h3><div class="inline-actions"><select id="relPeriodo">${periodos.map(p=>`<option value="${p}" ${p===state.relPeriodo?'selected':''}>${p}</option>`).join('')}</select><button id="csvHor">CSV</button></div></div>
-    <table><thead><tr><th>Dia</th><th>Turno</th><th>Bloco inicial</th><th>Qtd</th><th>Disciplina</th><th>Docentes</th><th>Turma</th></tr></thead><tbody>
-    ${hp.map(h=>{ const o=state.oferta.find(x=>x.id===h.ofertaId); const docs=(o.docentes||[]).map(docenteName).filter(Boolean).join(', '); return `<tr><td>${h.dia}</td><td>${h.turno}</td><td>${h.blocoInicial}</td><td>${h.qtdBlocos}</td><td>${o?.nome||''}</td><td>${docs}</td><td>${o?.periodo||''}</td></tr>`; }).join('')}
-    </tbody></table>
-  </div>`;
+function showPanel(key) {
+  document.querySelectorAll(".panel").forEach((panel) => panel.classList.remove("active"));
+  document.getElementById(`panel-${key}`).classList.add("active");
 }
-
-function render(){
-  document.getElementById('tabs').innerHTML=renderTabs();
-  document.querySelectorAll('#tabs .tab').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; render(); });
-  const app=document.getElementById('app');
-  app.innerHTML = state.tab==='docentes' ? renderDocentes() :
-                  state.tab==='oferta' ? renderOferta() :
-                  state.tab==='atividades' ? renderAtividades() :
-                  state.tab==='resumo' ? renderResumo() :
-                  state.tab==='horarios' ? renderHorarios() :
-                  state.tab==='grade' ? renderGrade() :
-                  renderRelatorios();
-  bind();
-  save();
-}
-function bind(){
-  document.getElementById('btnSeed').onclick=()=>{ seed(); render(); };
-  document.getElementById('btnExport').onclick=()=>downloadJson('dch_uern_dados.json', state);
-  document.getElementById('btnImport').onchange=e=>{
-    const f=e.target.files[0]; if(!f) return;
-    const r=new FileReader();
-    r.onload=()=>{ state=JSON.parse(r.result); syncAtividades(); render(); };
-    r.readAsText(f);
-  };
-  document.getElementById('btnReset').onclick=()=>{ if(confirm('Limpar tudo?')){ localStorage.removeItem(STORAGE_KEY); seed(); render(); } };
-
-  document.querySelectorAll('[data-doc]').forEach(el=>el.onchange=()=>{ const d=state.docentes[+el.dataset.doc]; d[el.dataset.f]=el.type==='number'?+el.value:el.value; render(); });
-  document.querySelectorAll('[data-del-doc]').forEach(b=>b.onclick=()=>{ const idx=+b.dataset.delDoc, id=state.docentes[idx].id; state.docentes.splice(idx,1); state.oferta.forEach(o=>o.docentes=(o.docentes||[]).filter(x=>x!==id)); delete state.atividades[id]; render(); });
-  const addDoc=document.getElementById('addDoc'); if(addDoc) addDoc.onclick=()=>{ state.docentes.push({id:uid(),nome:'',regime:'40h',minimoSala:12,funcao:'',chFuncao:0}); syncAtividades(); render(); };
-
-  document.querySelectorAll('[data-of]').forEach(el=>el.onchange=()=>{ const o=state.oferta[+el.dataset.of]; o[el.dataset.f]=el.type==='number'?+el.value:el.value; o.total=(+o.teorica||0)+(+o.pratica||0); render(); });
-  document.querySelectorAll('[data-del-of]').forEach(b=>b.onclick=()=>{ const idx=+b.dataset.delOf,id=state.oferta[idx].id; state.oferta.splice(idx,1); state.horarios=state.horarios.filter(h=>h.ofertaId!==id); render(); });
-  const addOferta=document.getElementById('addOferta'); if(addOferta) addOferta.onclick=()=>{ state.oferta.push({id:uid(),periodo:'',codigo:'',nome:'',teorica:0,pratica:0,total:0,docentes:[]}); render(); };
-  document.querySelectorAll('[data-off]').forEach(cb=>cb.onchange=()=>{ const o=state.oferta[+cb.dataset.off]; const id=cb.dataset.docid; o.docentes=o.docentes||[]; if(cb.checked&&!o.docentes.includes(id)) o.docentes.push(id); if(!cb.checked) o.docentes=o.docentes.filter(x=>x!==id); render(); });
-
-  document.querySelectorAll('[data-act]').forEach(el=>el.onchange=()=>{ const a=state.atividades[el.dataset.act]; a[el.dataset.f]=el.type==='checkbox'?el.checked:(el.tagName==='SELECT'?el.value:+el.value); render(); });
-  document.querySelectorAll('[data-add-com]').forEach(b=>b.onclick=()=>{ state.atividades[b.dataset.addCom].outrasComissoes.push({nome:'',ch:0}); render(); });
-  document.querySelectorAll('[data-com-doc]').forEach(el=>el.onchange=()=>{ const a=state.atividades[el.dataset.comDoc].outrasComissoes[+el.dataset.idx]; a[el.dataset.kind]=el.type==='number'?+el.value:el.value; render(); });
-  document.querySelectorAll('[data-del-com]').forEach(b=>b.onclick=()=>{ state.atividades[b.dataset.delCom].outrasComissoes.splice(+b.dataset.idx,1); render(); });
-
-  const selResumo=document.getElementById('selResumo'); if(selResumo) selResumo.onchange=e=>{ state.resumoDocente=e.target.value; render(); };
-
-  document.querySelectorAll('[data-turno]').forEach(sel=>sel.onchange=()=>{ const id=sel.dataset.turno; const bloco=document.querySelector(`[data-bloco="${id}"]`); bloco.innerHTML=(BLOCKS[sel.value]||[]).map(b=>`<option value="${b[0]}">${b[0]}</option>`).join(''); });
-  document.querySelectorAll('[data-add-hor]').forEach(b=>b.onclick=()=>{
-    const id=b.dataset.addHor;
-    const turno=document.querySelector(`[data-turno="${id}"]`).value;
-    const blocoInicial=+document.querySelector(`[data-bloco="${id}"]`).value;
-    const qtd=+document.querySelector(`[data-qtd="${id}"]`).value;
-    const max=(BLOCKS[turno]||[]).length;
-    if(blocoInicial+qtd-1>max){ alert('A quantidade de blocos ultrapassa o limite do turno.'); return; }
-    state.horarios.push({id:uid(),ofertaId:id,dia:document.querySelector(`[data-dia="${id}"]`).value,turno,blocoInicial,qtdBlocos:qtd});
+function renderDocentes() {
+  const panel = document.getElementById("panel-docentes");
+  panel.innerHTML = `
+    <div class="bar">
+      <h2>Docentes</h2>
+      <button id="add-docente">Adicionar docente</button>
+    </div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Regime</th>
+            <th>Mínimo sala</th>
+            <th>Função</th>
+            <th>CH função</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${state.docentes.map((docente, i) => `
+            <tr>
+              <td><input data-docente="${i}" data-f="nome" value="${docente.nome || ""}" /></td>
+              <td>
+                <select data-docente="${i}" data-f="regime">
+                  <option value="20h" ${docente.regime === "20h" ? "selected" : ""}>20h</option>
+                  <option value="40h" ${docente.regime === "40h" ? "selected" : ""}>40h</option>
+                  <option value="DE" ${docente.regime === "DE" ? "selected" : ""}>DE</option>
+                </select>
+              </td>
+              <td><input type="number" data-docente="${i}" data-f="minimoSala" value="${docente.minimoSala || 0}" /></td>
+              <td><input data-docente="${i}" data-f="funcao" value="${docente.funcao || ""}" /></td>
+              <td><input type="number" data-docente="${i}" data-f="chFuncao" value="${docente.chFuncao || 0}" /></td>
+              <td><button data-del-docente="${i}">Excluir</button></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+  panel.querySelector("#add-docente").onclick = () => {
+    state.docentes.push({
+      id: uid(),
+      nome: "",
+      regime: "40h",
+      minimoSala: 12,
+      funcao: "",
+      chFuncao: 0,
+    });
+    syncAtividades();
     render();
+  };
+
+  panel.querySelectorAll("[data-docente]").forEach((el) => {
+    el.onchange = () => {
+      const docente = state.docentes[Number(el.dataset.docente)];
+      docente[el.dataset.f] = el.type === "number" ? Number(el.value) : el.value;
+      render();
+    };
   });
-  document.querySelectorAll('[data-del-hor]').forEach(b=>b.onclick=()=>{ state.horarios=state.horarios.filter(h=>h.id!==b.dataset.delHor); render(); });
 
-  const gv=document.getElementById('gradeView'); if(gv) gv.onchange=e=>{ state.gradeView=e.target.value; render(); };
-  const gt=document.getElementById('gradeTurma'); if(gt) gt.onchange=e=>{ state.gradeTurma=e.target.value; render(); };
-  const gd=document.getElementById('gradeDoc'); if(gd) gd.onchange=e=>{ state.gradeDocente=e.target.value; render(); };
+  panel.querySelectorAll("[data-del-docente]").forEach((btn) => {
+    btn.onclick = () => {
+      const idx = Number(btn.dataset.delDocente);
+      const docenteId = state.docentes[idx].id;
+      state.docentes.splice(idx, 1);
+      state.oferta.forEach((oferta) => {
+        oferta.docentes = (oferta.docentes || []).filter((id) => id !== docenteId);
+      });
+      delete state.atividades[docenteId];
+      render();
+    };
+  });
+}
+function renderChoiceWrap(ofertaIndex, selectedIds) {
+  return `
+    <div class="choice-wrap">
+      ${state.docentes.map((docente) => `
+        <label class="choice">
+          <input type="checkbox" data-oferta-doc="${ofertaIndex}" data-doc-id="${docente.id}" ${selectedIds.includes(docente.id) ? "checked" : ""} />
+          <span>${docente.nome || "(sem nome)"}</span>
+        </label>
+      `).join("")}
+    </div>
+  `;
+}
+function renderOferta() {
+  const panel = document.getElementById("panel-oferta");
+  panel.innerHTML = `
+    <div class="bar">
+      <h2>Oferta</h2>
+      <button id="add-oferta">Adicionar disciplina</button>
+    </div>
 
-  const relDoc=document.getElementById('relDoc'); if(relDoc) relDoc.onchange=e=>{ state.relDocente=e.target.value; render(); };
-  const relPeriodo=document.getElementById('relPeriodo'); if(relPeriodo) relPeriodo.onchange=e=>{ state.relPeriodo=e.target.value; render(); };
-  const csvDoc=document.getElementById('csvDoc'); if(csvDoc) csvDoc.onclick=()=>{
-    const d=state.docentes.find(x=>x.id===state.relDocente); if(!d) return; const r=resumoDocente(d);
-    downloadCsv('quadro_resumo_docente.csv', [['Docente','Sala','Regência','Monitoria','Pesquisa','Coord. PIBIC','Extensão','Orient. TCC','Orient. Mestrado','Comissões','Função','Total'],
-      [r.docente,r.sala,r.regencia,r.monitoria,r.pesquisa,r.coordProjetoPibic,r.extensao,r.orientTcc,r.orientMestrado,r.comissoes,r.funcao,r.total],
-      [],['Período','Código','Disciplina','CH sala','CH regência'], ...r.disciplinas.map(it=>[it.periodo,it.codigo,it.disciplina,it.sala,it.regencia])]);
+    <div class="help">
+      A aba Horários trabalha com blocos de 50 minutos. A quantidade semanal de blocos é calculada a partir da CH total / 15 semanas.
+      Assim, uma disciplina de 60h gera 4 blocos semanais; 90h gera 6 blocos; 150h gera 10 blocos.
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Período</th>
+            <th>Código</th>
+            <th>Disciplina</th>
+            <th>CH Teórica</th>
+            <th>CH Prática</th>
+            <th>Blocos/semana</th>
+            <th>Docentes</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${state.oferta.map((oferta, i) => `
+            <tr>
+              <td><input data-oferta="${i}" data-f="periodo" value="${oferta.periodo || ""}" /></td>
+              <td><input data-oferta="${i}" data-f="codigo" value="${oferta.codigo || ""}" /></td>
+              <td><input data-oferta="${i}" data-f="nome" value="${oferta.nome || ""}" /></td>
+              <td><input type="number" data-oferta="${i}" data-f="teorica" value="${oferta.teorica || 0}" /></td>
+              <td><input type="number" data-oferta="${i}" data-f="pratica" value="${oferta.pratica || 0}" /></td>
+              <td><strong>${calcBlocosNecessarios(oferta)}</strong></td>
+              <td>${renderChoiceWrap(i, oferta.docentes || [])}</td>
+              <td><button data-del-oferta="${i}">Excluir</button></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  panel.querySelector("#add-oferta").onclick = () => {
+    state.oferta.push({
+      id: uid(),
+      periodo: "",
+      codigo: "",
+      nome: "",
+      teorica: 0,
+      pratica: 0,
+      total: 0,
+      docentes: [],
+    });
+    render();
   };
-  const csvTodos=document.getElementById('csvTodos'); if(csvTodos) csvTodos.onclick=()=>{
-    const rows=[['Docente','Sala','Regência','Monitoria','Pesquisa','Coord. PIBIC','Extensão','Orient.','Comissões','Função','Total','Status']];
-    state.docentes.forEach(d=>{ const r=resumoDocente(d); rows.push([r.docente,r.sala,r.regencia,r.monitoria,r.pesquisa,r.coordProjetoPibic,r.extensao,r.orientTcc+r.orientMestrado,r.comissoes,r.funcao,r.total,r.status]); });
-    downloadCsv('quadro_resumo_todos_docentes.csv', rows);
-  };
-  const csvHor=document.getElementById('csvHor'); if(csvHor) csvHor.onclick=()=>{
-    const rows=[['Dia','Turno','Bloco inicial','Qtd','Disciplina','Docentes','Turma']];
-    state.horarios.forEach(h=>{ const o=state.oferta.find(x=>x.id===h.ofertaId); if(o && o.periodo===state.relPeriodo){ rows.push([h.dia,h.turno,h.blocoInicial,h.qtdBlocos,o.nome,(o.docentes||[]).map(docenteName).filter(Boolean).join(', '),o.periodo]); }});
-    downloadCsv(`quadro_horarios_${state.relPeriodo}.csv`, rows);
+
+  panel.querySelectorAll("[data-oferta]").forEach((el) => {
+    el.onchange = () => {
+      const oferta = state.oferta[Number(el.dataset.oferta)];
+      oferta[el.dataset.f] = el.type === "number" ? Number(el.value) : el.value;
+      oferta.total = Number(oferta.teorica || 0) + Number(oferta.pratica || 0);
+      render();
+    };
+  });
+
+  panel.querySelectorAll("[data-del-oferta]").forEach((btn) => {
+    btn.onclick = () => {
+      const idx = Number(btn.dataset.delOferta);
+      const ofertaId = state.oferta[idx].id;
+      state.oferta.splice(idx, 1);
+      state.horarios = state.horarios.filter((h) => h.ofertaId !== ofertaId);
+      render();
+    };
+  });
+
+  panel.querySelectorAll("[data-oferta-doc]").forEach((cb) => {
+    cb.onchange = () => {
+      const oferta = state.oferta[Number(cb.dataset.ofertaDoc)];
+      const docenteId = cb.dataset.docId;
+      oferta.docentes = oferta.docentes || [];
+      if (cb.checked && !oferta.docentes.includes(docenteId)) {
+        oferta.docentes.push(docenteId);
+      }
+      if (!cb.checked) {
+        oferta.docentes = oferta.docentes.filter((id) => id !== docenteId);
+      }
+      render();
+    };
+  });
+}
+function renderAtividades() {
+  const panel = document.getElementById("panel-atividades");
+  panel.innerHTML = `
+    <div class="bar"><h2>Atividades</h2></div>
+    <div class="help">
+      Ajustes aplicados: orientação PIBIC removida; NDE coordenação = 8h; NDE membro = 2h; Comitê de Ética = 8h.
+      Coordenação PIBIC = 8h por quantidade; monitoria = 4h por quantidade; TCC = 2h por aluno; mestrado = 3h por orientando.
+    </div>
+
+    <div class="grid">
+      ${state.docentes.map((docente) => {
+        const acts = state.atividades[docente.id];
+        return `
+          <div class="doc-card">
+            <h3>${docente.nome || "(sem nome)"}</h3>
+
+            <div class="grid">
+              <div>
+                <label>Pesquisa institucionalizada</label>
+                <input type="number" min="0" data-atividade="${docente.id}" data-f="pesquisaInstitucionalizadaQtd" value="${acts.pesquisaInstitucionalizadaQtd || 0}" />
+              </div>
+
+              <div>
+                <label>Coordenação PIBIC</label>
+                <input type="number" min="0" data-atividade="${docente.id}" data-f="coordProjetoPibicQtd" value="${acts.coordProjetoPibicQtd || 0}" />
+              </div>
+
+              <div>
+                <label>Monitoria</label>
+                <input type="number" min="0" data-atividade="${docente.id}" data-f="monitoriaQtd" value="${acts.monitoriaQtd || 0}" />
+              </div>
+
+              <div>
+                <label>Extensão coordenação</label>
+                <input type="number" min="0" data-atividade="${docente.id}" data-f="extensaoCoordenacaoQtd" value="${acts.extensaoCoordenacaoQtd || 0}" />
+              </div>
+
+              <div>
+                <label>Extensão membro</label>
+                <input type="number" min="0" data-atividade="${docente.id}" data-f="extensaoMembroQtd" value="${acts.extensaoMembroQtd || 0}" />
+              </div>
+
+              <div>
+                <label>NDE</label>
+                <select data-atividade="${docente.id}" data-f="nde">
+                  <option value="none" ${acts.nde === "none" ? "selected" : ""}>Não</option>
+                  <option value="membro" ${acts.nde === "membro" ? "selected" : ""}>Membro</option>
+                  <option value="coordenacao" ${acts.nde === "coordenacao" ? "selected" : ""}>Coordenação</option>
+                </select>
+              </div>
+
+              <label><input type="checkbox" data-atividade="${docente.id}" data-f="grupoPesquisaMembro" ${acts.grupoPesquisaMembro ? "checked" : ""} /> Grupo de pesquisa membro</label>
+              <label><input type="checkbox" data-atividade="${docente.id}" data-f="grupoPesquisaLider" ${acts.grupoPesquisaLider ? "checked" : ""} /> Grupo de pesquisa líder</label>
+              <label><input type="checkbox" data-atividade="${docente.id}" data-f="fiel" ${acts.fiel ? "checked" : ""} /> FIEL</label>
+              <label><input type="checkbox" data-atividade="${docente.id}" data-f="fieb" ${acts.fieb ? "checked" : ""} /> FIEB</label>
+              <label><input type="checkbox" data-atividade="${docente.id}" data-f="comiteEtica" ${acts.comiteEtica ? "checked" : ""} /> Comitê de Ética</label>
+
+              <div>
+                <label>Orientações TCC</label>
+                <input type="number" min="0" data-atividade="${docente.id}" data-f="orientacoesTcc" value="${acts.orientacoesTcc || 0}" />
+              </div>
+
+              <div>
+                <label>Orientações Mestrado</label>
+                <input type="number" min="0" data-atividade="${docente.id}" data-f="orientacoesMestrado" value="${acts.orientacoesMestrado || 0}" />
+              </div>
+            </div>
+
+            <div style="margin-top:1rem">
+              <div class="bar">
+                <h4>Outras comissões</h4>
+                <button data-add-comissao="${docente.id}">Adicionar</button>
+              </div>
+
+              ${(acts.outrasComissoes || []).map((item, idx) => `
+                <div class="comissao-item">
+                  <div>
+                    <label>Nome</label>
+                    <input data-comissao-docente="${docente.id}" data-comissao-idx="${idx}" data-kind="nome" value="${item.nome || ""}" />
+                  </div>
+                  <div>
+                    <label>CH</label>
+                    <input type="number" min="0" data-comissao-docente="${docente.id}" data-comissao-idx="${idx}" data-kind="ch" value="${item.ch || 0}" />
+                  </div>
+                  <div>
+                    <button data-del-comissao="${docente.id}" data-comissao-idx="${idx}">Remover</button>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+
+  panel.querySelectorAll("[data-atividade]").forEach((el) => {
+    el.onchange = () => {
+      const acts = state.atividades[el.dataset.atividade];
+      acts[el.dataset.f] = el.type === "checkbox"
+        ? el.checked
+        : el.tagName === "SELECT"
+        ? el.value
+        : Number(el.value);
+      render();
+    };
+  });
+
+  panel.querySelectorAll("[data-add-comissao]").forEach((btn) => {
+    btn.onclick = () => {
+      state.atividades[btn.dataset.addComissao].outrasComissoes.push({ nome: "", ch: 0 });
+      render();
+    };
+  });
+
+  panel.querySelectorAll("[data-comissao-docente]").forEach((el) => {
+    el.onchange = () => {
+      const docenteId = el.dataset.comissaoDocente;
+      const idx = Number(el.dataset.comissaoIdx);
+      state.atividades[docenteId].outrasComissoes[idx][el.dataset.kind] =
+        el.type === "number" ? Number(el.value) : el.value;
+      render();
+    };
+  });
+
+  panel.querySelectorAll("[data-del-comissao]").forEach((btn) => {
+    btn.onclick = () => {
+      const docenteId = btn.dataset.delComissao;
+      const idx = Number(btn.dataset.comissaoIdx);
+      state.atividades[docenteId].outrasComissoes.splice(idx, 1);
+      render();
+    };
+  });
+}
+function renderResumo() {
+  const panel = document.getElementById("panel-resumo");
+  if (!state.resumoDocenteId && state.docentes[0]?.id) {
+    state.resumoDocenteId = state.docentes[0].id;
+  }
+
+  const docente = state.docentes.find((d) => d.id === state.resumoDocenteId);
+  if (!docente) {
+    panel.innerHTML = `<div class="small">Nenhum docente cadastrado.</div>`;
+    return;
+  }
+
+  const resumo = calcResumoDocente(docente);
+  const disciplinas = detalhamentoDisciplinas(docente.id);
+
+  panel.innerHTML = `
+    <div class="bar">
+      <h2>Resumo individual por docente</h2>
+      <div style="min-width:280px">
+        <select id="sel-resumo-docente">
+          ${state.docentes.map((doc) => `
+            <option value="${doc.id}" ${doc.id === state.resumoDocenteId ? "selected" : ""}>
+              ${doc.nome || "(sem nome)"}
+            </option>
+          `).join("")}
+        </select>
+      </div>
+    </div>
+
+    <div class="resumo-cards">
+      <div class="resumo-card">
+        <h3>Ensino</h3>
+        <p>Sala de aula: <strong>${resumo.sala}</strong></p>
+        <p>Regência: <strong>${resumo.regencia}</strong></p>
+        <p>Monitoria: <strong>${resumo.monitoria}</strong></p>
+      </div>
+
+      <div class="resumo-card">
+        <h3>Pesquisa</h3>
+        <p>Pesquisa institucionalizada: <strong>${resumo.pesquisaInstitucionalizada}</strong></p>
+        <p>Grupo de pesquisa: <strong>${resumo.grupoPesquisa}</strong></p>
+        <p>Coord. PIBIC: <strong>${resumo.coordProjetoPibic}</strong></p>
+      </div>
+
+      <div class="resumo-card">
+        <h3>Extensão</h3>
+        <p><strong>${resumo.extensao}</strong></p>
+      </div>
+
+      <div class="resumo-card">
+        <h3>Orientações</h3>
+        <p>TCC: <strong>${resumo.orientTcc}</strong></p>
+        <p>Mestrado: <strong>${resumo.orientMestrado}</strong></p>
+      </div>
+
+      <div class="resumo-card">
+        <h3>Comissões</h3>
+        <p><strong>${resumo.comissoes}</strong></p>
+      </div>
+
+      <div class="resumo-card destaque">
+        <h3>Total</h3>
+        <p><strong>${resumo.total}</strong></p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="bar"><h3>Disciplinas do docente</h3></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Período</th>
+            <th>Código</th>
+            <th>Disciplina</th>
+            <th>CH sala</th>
+            <th>CH regência</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${disciplinas.map((item) => `
+            <tr>
+              <td>${item.periodo}</td>
+              <td>${item.codigo}</td>
+              <td>${item.disciplina}</td>
+              <td>${item.sala}</td>
+              <td>${item.regencia}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  panel.querySelector("#sel-resumo-docente").onchange = (e) => {
+    state.resumoDocenteId = e.target.value;
+    render();
   };
 }
+function renderHorarios() {
+  const panel = document.getElementById("panel-horarios");
+  const conflicts = detectConflicts();
 
-if(!load()) seed();
+  panel.innerHTML = `
+    <div class="bar"><h2>Horários por blocos de 50 minutos</h2></div>
+
+    <div class="help">
+      Agora o cadastro é feito por blocos semanais. Uma disciplina pode ser distribuída em mais de um dia da semana.
+      Ex.: Morfo I = 10 blocos → 5 blocos na segunda e 5 na quarta.
+      O sistema compara conflito de período e de docente.
+    </div>
+
+    ${state.oferta.map((oferta) => {
+      const usados = state.horarios
+        .filter((h) => h.ofertaId === oferta.id)
+        .reduce((acc, item) => acc + Number(item.qtdBlocos || 0), 0);
+
+      const necessarios = calcBlocosNecessarios(oferta);
+      const saldo = necessarios - usados;
+      const docentes = (oferta.docentes || []).map(docenteNome).filter(Boolean).join(", ");
+
+      const linhas = state.horarios.filter((h) => h.ofertaId === oferta.id);
+
+      return `
+        <div class="block-card">
+          <div class="bar">
+            <div>
+              <strong>${oferta.nome}</strong>
+              <span class="period-chip">${oferta.periodo || ""}</span>
+              <div class="small">${oferta.codigo || ""} • ${docentes || "Sem docentes"}</div>
+            </div>
+            <div class="small">
+              Blocos exigidos: <strong>${necessarios}</strong> • distribuídos: <strong>${usados}</strong> • saldo: <strong>${saldo}</strong>
+            </div>
+          </div>
+
+          <div class="block-meter">
+            <span style="width:${Math.min(100, necessarios ? (usados / necessarios) * 100 : 0)}%"></span>
+          </div>
+
+          <div class="horario-grid" style="margin-top:.8rem">
+            <div>
+              <label>Dia</label>
+              <select data-dia-oferta="${oferta.id}">
+                ${dias.map((dia) => `<option value="${dia}">${dia}</option>`).join("")}
+              </select>
+            </div>
+
+            <div>
+              <label>Turno</label>
+              <select data-turno-oferta="${oferta.id}">
+                ${Object.keys(blocosPorTurno).map((turno) => `<option value="${turno}">${turno}</option>`).join("")}
+              </select>
+            </div>
+
+            <div>
+              <label>Bloco inicial</label>
+              <select data-bloco-oferta="${oferta.id}">
+                ${blocosPorTurno["Manhã"].map((item) => `<option value="${item.numero}">${item.numero}</option>`).join("")}
+              </select>
+            </div>
+
+            <div>
+              <label>Qtd. blocos</label>
+              <input type="number" min="1" max="6" value="1" data-qtd-oferta="${oferta.id}" />
+            </div>
+
+            <div>
+              <button data-add-horario-oferta="${oferta.id}">Adicionar</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:.8rem">
+            <table>
+              <thead>
+                <tr>
+                  <th>Dia</th>
+                  <th>Turno</th>
+                  <th>Bloco inicial</th>
+                  <th>Qtd. blocos</th>
+                  <th>Faixas</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${linhas.map((linha) => {
+                  const slots = (blocosPorTurno[linha.turno] || [])
+                    .slice(Number(linha.blocoInicial) - 1, Number(linha.blocoInicial) - 1 + Number(linha.qtdBlocos))
+                    .map((b) => b.faixa)
+                    .join("<br>");
+
+                  const c = conflicts[linha.id] || { docente: false, periodo: false };
+                  let badge = `<span class="badge ok">OK</span>`;
+                  if (c.docente && c.periodo) badge = `<span class="badge bad">Docente + Período</span>`;
+                  else if (c.docente) badge = `<span class="badge bad">Docente</span>`;
+                  else if (c.periodo) badge = `<span class="badge warn">Período</span>`;
+
+                  return `
+                    <tr>
+                      <td>${linha.dia}</td>
+                      <td>${linha.turno}</td>
+                      <td>${linha.blocoInicial}</td>
+                      <td>${linha.qtdBlocos}</td>
+                      <td>${slots}</td>
+                      <td>${badge}</td>
+                      <td><button data-del-horario="${linha.id}">Excluir</button></td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }).join("")}
+  `;
+
+  panel.querySelectorAll("[data-turno-oferta]").forEach((sel) => {
+    sel.onchange = () => {
+      const ofertaId = sel.dataset.turnoOferta;
+      const blocoSelect = panel.querySelector(`[data-bloco-oferta="${ofertaId}"]`);
+      blocoSelect.innerHTML = (blocosPorTurno[sel.value] || []).map((item) => `
+        <option value="${item.numero}">${item.numero}</option>
+      `).join("");
+    };
+  });
+
+  panel.querySelectorAll("[data-add-horario-oferta]").forEach((btn) => {
+    btn.onclick = () => {
+      const ofertaId = btn.dataset.addHorarioOferta;
+      const dia = panel.querySelector(`[data-dia-oferta="${ofertaId}"]`).value;
+      const turno = panel.querySelector(`[data-turno-oferta="${ofertaId}"]`).value;
+      const blocoInicial = Number(panel.querySelector(`[data-bloco-oferta="${ofertaId}"]`).value);
+      const qtdBlocos = Number(panel.querySelector(`[data-qtd-oferta="${ofertaId}"]`).value);
+
+      const maxBlocosTurno = (blocosPorTurno[turno] || []).length;
+      if (blocoInicial + qtdBlocos - 1 > maxBlocosTurno) {
+        alert("A quantidade de blocos ultrapassa o limite do turno.");
+        return;
+      }
+
+      state.horarios.push({
+        id: uid(),
+        ofertaId,
+        dia,
+        turno,
+        blocoInicial,
+        qtdBlocos,
+      });
+
+      render();
+    };
+  });
+
+  panel.querySelectorAll("[data-del-horario]").forEach((btn) => {
+    btn.onclick = () => {
+      state.horarios = state.horarios.filter((h) => h.id !== btn.dataset.delHorario);
+      render();
+    };
+  });
+}
+function renderGrade() {
+  const panel = document.getElementById("panel-grade");
+
+  const filtered = state.horarios.filter((horario) => {
+    const oferta = state.oferta.find((o) => o.id === horario.ofertaId);
+    if (!oferta) return false;
+
+    if (state.gradeFilters.view === "turma") {
+      return !state.gradeFilters.turma || oferta.periodo === state.gradeFilters.turma;
+    }
+    return !state.gradeFilters.docente || (oferta.docentes || []).includes(state.gradeFilters.docente);
+  });
+
+  panel.innerHTML = `
+    <div class="bar">
+      <h2>Grade semanal</h2>
+      <div class="filters">
+        <div>
+          <label>Visualizar por</label>
+          <select id="grade-view">
+            <option value="turma" ${state.gradeFilters.view === "turma" ? "selected" : ""}>Turma</option>
+            <option value="docente" ${state.gradeFilters.view === "docente" ? "selected" : ""}>Docente</option>
+          </select>
+        </div>
+
+        <div id="grade-wrap-turma" style="display:${state.gradeFilters.view === "turma" ? "block" : "none"}">
+          <label>Turma</label>
+          <select id="grade-turma">
+            <option value="">Todas</option>
+            ${[...new Set(state.oferta.map((o) => o.periodo).filter(Boolean))]
+              .map((periodo) => `<option value="${periodo}" ${state.gradeFilters.turma === periodo ? "selected" : ""}>${periodo}</option>`)
+              .join("")}
+          </select>
+        </div>
+
+        <div id="grade-wrap-docente" style="display:${state.gradeFilters.view === "docente" ? "block" : "none"}">
+          <label>Docente</label>
+          <select id="grade-docente">
+            <option value="">Todos</option>
+            ${state.docentes.map((doc) => `
+              <option value="${doc.id}" ${state.gradeFilters.docente === doc.id ? "selected" : ""}>
+                ${doc.nome || "(sem nome)"}
+              </option>
+            `).join("")}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <table class="grade-table">
+        <thead>
+          <tr>
+            <th>Turno / Bloco</th>
+            ${dias.map((dia) => `<th>${dia}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${Object.entries(blocosPorTurno).map(([turno, blocos]) =>
+            blocos.map((bloco) => `
+              <tr>
+                <th>${turno} • ${bloco.numero}<br><span class="small">${bloco.faixa}</span></th>
+                ${dias.map((dia) => {
+                  const hits = filtered.filter((h) => {
+                    if (h.dia !== dia || h.turno !== turno) return false;
+                    const inicio = Number(h.blocoInicial);
+                    const fim = inicio + Number(h.qtdBlocos) - 1;
+                    return bloco.numero >= inicio && bloco.numero <= fim;
+                  });
+
+                  return `
+                    <td class="grade-cell">
+                      ${hits.map((h) => {
+                        const oferta = state.oferta.find((o) => o.id === h.ofertaId);
+                        const docentes = (oferta?.docentes || []).map(docenteNome).filter(Boolean).join(", ");
+                        return `
+                          <div class="slot-card">
+                            <div class="slot-title">${oferta?.nome || ""}</div>
+                            <div class="slot-sub">${oferta?.periodo || ""}</div>
+                            <div class="slot-sub">${docentes}</div>
+                          </div>
+                        `;
+                      }).join("")}
+                    </td>
+                  `;
+                }).join("")}
+              </tr>
+            `).join("")
+          ).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  panel.querySelector("#grade-view").onchange = (e) => {
+    state.gradeFilters.view = e.target.value;
+    render();
+  };
+  panel.querySelector("#grade-turma").onchange = (e) => {
+    state.gradeFilters.turma = e.target.value;
+    render();
+  };
+  panel.querySelector("#grade-docente").onchange = (e) => {
+    state.gradeFilters.docente = e.target.value;
+    render();
+  };
+}
+function render() {
+  syncAtividades();
+  renderTabs();
+  showPanel(state.activeTab);
+
+  renderDocentes();
+  renderOferta();
+  renderAtividades();
+  renderResumo();
+  renderHorarios();
+  renderGrade();
+
+  saveState();
+}
+document.getElementById("btnSeed").onclick = () => {
+  seedData();
+  render();
+};
+document.getElementById("btnExportJson").onclick = () => {
+  downloadJson("dch_uern_dados.json", state);
+};
+document.getElementById("inputImport").onchange = (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const imported = JSON.parse(reader.result);
+    Object.assign(state, imported);
+    syncAtividades();
+    render();
+  };
+  reader.readAsText(file);
+};
+document.getElementById("btnReset").onclick = () => {
+  if (!confirm("Limpar tudo?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  seedData();
+  render();
+};
+
+if (!loadState()) {
+  seedData();
+}
 render();
 </script>
 </body>
