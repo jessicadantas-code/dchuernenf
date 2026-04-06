@@ -169,7 +169,7 @@ input,select{
 .badge.ok{background:#ecfdf3;color:var(--ok)}
 .badge.bad{background:#fef3f2;color:var(--danger)}
 .badge.warn{background:#fff7ed;color:var(--warn)}
-.filters{
+.filters,.inline-actions{
   display:flex;
   gap:.75rem;
   flex-wrap:wrap;
@@ -219,17 +219,6 @@ input,select{
   align-items:end;
   margin-bottom:.5rem;
 }
-.block-meter{
-  height:10px;
-  background:#e5e7eb;
-  border-radius:999px;
-  overflow:hidden;
-}
-.block-meter > span{
-  display:block;
-  height:100%;
-  background:#2457c5;
-}
 .period-chip{
   display:inline-block;
   margin-left:.45rem;
@@ -243,6 +232,10 @@ input,select{
   grid-template-columns:1.2fr 1fr 1fr 1fr auto;
   gap:.5rem;
   align-items:end;
+}
+.detail-list{
+  margin:0;
+  padding-left:1.2rem;
 }
 @media (max-width: 900px){
   .topbar{flex-direction:column}
