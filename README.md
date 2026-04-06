@@ -1,23 +1,21 @@
-# DCH UERN — Sprint 13
+# DCH UERN — pacote único
 
-Arquivos na raiz:
-- index.html
-- styles.css
-- helpers.js
-- state.js
-- rules.js
-- main.js
-- ui.js
-- uern_logo.png
+Aplicação em arquivo único (`index.html`) para facilitar upload no GitHub Pages.
 
-Correções:
+Inclui:
+- horários por blocos de 50 minutos
+- distribuição da mesma disciplina em mais de um dia
+- alerta de choque por período e por docente
+- orientação PIBIC removida
+- NDE coordenação = 8h
+- NDE membro = 2h
 - Comitê de Ética = 8h
-- Coordenação PIBIC = 8h
-- Extensão coordenação = 8h por ação
-- Extensão membro = 4h por ação
-- FIEL/FIEB = 2h
-- NDE = 2h membro / 4h coordenação
-- Outras comissões restauradas
-- Inputs de texto sem rerender por tecla
-- Resumo individual com disciplinas detalhadas
-- Exportações CSV/PDF revisadas
+- coord. PIBIC = 8h por quantidade
+- extensão coordenação = 8h por quantidade
+- extensão membro = 4h por quantidade
+- monitoria = 4h por quantidade
+- TCC = 2h por aluno
+- mestrado = 3h por orientando
+- FIEL = 2h
+- FIEB = 2h
+- outras comissões com nome + CH manual
