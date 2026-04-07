@@ -1,12 +1,13 @@
-# DCH UERN — pacote final revisado
+# DCH UERN — PPC 2025
 
-Ajustes consolidados:
-- Oferta 26.1 com opção de adicionar disciplina isolada ou período inteiro
-- Atividades mantidas na versão boa
-- Resumo com descritivo detalhado das atividades
-- Horários com inserção por disciplina da oferta, puxando período e docentes
-- Relatórios restaurados
-- Horários em blocos de 50 minutos
-- Orientação PIBIC removida
-- NDE coordenação = 8h
-- NDE membro = 2h
+Pacote atualizado com:
+- catálogo obrigatório completo do PPC 2025
+- catálogo de optativas do PPC 2025
+- UCE do PPC 2025
+- disciplina especial mantida para inserção manual
+- fórmulas de cálculo preservadas:
+  - UCE = 1h de sala
+  - teoria divide entre docentes
+  - prática integral para cada docente
+  - regência = 100% teórica + 50% prática
+  - horários em blocos de 50 minutos
