@@ -805,7 +805,7 @@ function cabecalhoRelatorioGeral(){
     "Comitê de Ética + portaria","CH Comitê de Ética",
     "Outras comissões + portaria","CH outras comissões",
     "Portarias/atos administrativos do semestre",
-    "Observações","Status do preenchimento","Total CH atividades"
+    "Observações","Status do preenchimento","Total CH"
   ];
 }
 
@@ -828,44 +828,94 @@ function gerarPdfRelatorioGeral(dados){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a3"});
   doc.setFontSize(14);
-  doc.text(`Relatório Geral de Carga Horária Docente — ${state.semestreAtivo}`,14,12);
-  doc.setFontSize(8);
-  doc.text("Relatório consolidado com disciplinas, cálculos, atividades e portarias.",14,18);
+  doc.text(`Relatório Geral de Carga Horária Docente — ${state.semestreAtivo}`,10,10);
+  doc.setFontSize(7.5);
+  doc.text("Relatório consolidado com disciplinas, cálculos, atividades e portarias.",10,15);
 
   const head=[[
-    "Docente","Disciplinas / cálculo","Ensino","Reg.","Função/Portaria","CH função",
-    "Pesquisa","PIBIC","Extensão","Monitoria","TCC","Mestrado","Grupo",
-    "NDE","FIEL/FIEB","CEP","Comissões","Portarias","Total"
+    "Docente","Disciplinas / cálculo","Ens.","Reg.","Função/Portaria","CH",
+    "Pesquisa","PIBIC","Extensão","Monit.","TCC","Mest.","Grupo",
+    "NDE","FIEL/FIEB","CEP","Comissões","Portarias","Total CH"
   ]];
 
   const body=dados.map(d=>[
-    d.nome,d.disciplinas,d.chEnsino,d.regencia,d.funcao,d.chFuncao,
-    d.pesquisa?`${d.pesquisa} (${d.chPesquisa}h)`:d.chPesquisa||"",
-    d.pibic?`${d.pibic} (${d.chPibic}h)`:d.chPibic||"",
-    d.extensao?`${d.extensao} (${d.chExtensao}h)`:d.chExtensao||"",
-    d.monitoria?`${d.monitoria} (${d.chMonitoria}h)`:d.chMonitoria||"",
-    d.tcc?`${d.tcc} (${d.chTcc}h)`:d.chTcc||"",
-    d.mestrado?`${d.mestrado} (${d.chMestrado}h)`:d.chMestrado||"",
-    d.grupo?`${d.grupo} (${d.chGrupo}h)`:d.chGrupo||"",
-    d.nde?`${d.nde} (${d.chNde}h)`:d.chNde||"",
-    d.fielFieb?`${d.fielFieb} (${d.chFielFieb}h)`:d.chFielFieb||"",
-    d.comiteEtica?`${d.comiteEtica} (${d.chComiteEtica}h)`:d.chComiteEtica||"",
-    d.comissoes?`${d.comissoes} (${d.chComissoes}h)`:d.chComissoes||"",
-    d.portarias,d.total
+    d.nome,
+    d.disciplinas,
+    d.chEnsino,
+    d.regencia,
+    d.funcao,
+    d.chFuncao,
+    d.pesquisa?`${d.pesquisa} (${d.chPesquisa}h)`:(d.chPesquisa||""),
+    d.pibic?`${d.pibic} (${d.chPibic}h)`:(d.chPibic||""),
+    d.extensao?`${d.extensao} (${d.chExtensao}h)`:(d.chExtensao||""),
+    d.monitoria?`${d.monitoria} (${d.chMonitoria}h)`:(d.chMonitoria||""),
+    d.tcc?`${d.tcc} (${d.chTcc}h)`:(d.chTcc||""),
+    d.mestrado?`${d.mestrado} (${d.chMestrado}h)`:(d.chMestrado||""),
+    d.grupo?`${d.grupo} (${d.chGrupo}h)`:(d.chGrupo||""),
+    d.nde?`${d.nde} (${d.chNde}h)`:(d.chNde||""),
+    d.fielFieb?`${d.fielFieb} (${d.chFielFieb}h)`:(d.chFielFieb||""),
+    d.comiteEtica?`${d.comiteEtica} (${d.chComiteEtica}h)`:(d.chComiteEtica||""),
+    d.comissoes?`${d.comissoes} (${d.chComissoes}h)`:(d.chComissoes||""),
+    d.portarias,
+    d.total
+  ]);
+
+  const totalGeral=dados.reduce((s,d)=>s+Number(d.total||0),0);
+  body.push([
+    "TOTAL GERAL","","","","","","","","","","","","","","","","","",totalGeral
   ]);
 
   doc.autoTable({
-    head,body,startY:22,theme:"grid",
-    styles:{fontSize:5.2,cellPadding:1,overflow:"linebreak",valign:"top"},
-    headStyles:{fontSize:5.4},
-    columnStyles:{
-      0:{cellWidth:24},1:{cellWidth:52},4:{cellWidth:36},6:{cellWidth:28},
-      7:{cellWidth:28},8:{cellWidth:30},9:{cellWidth:26},10:{cellWidth:30},
-      11:{cellWidth:26},12:{cellWidth:22},13:{cellWidth:32},14:{cellWidth:28},
-      15:{cellWidth:28},16:{cellWidth:32},17:{cellWidth:42}
+    head,
+    body,
+    startY:19,
+    theme:"grid",
+    tableWidth:"auto",
+    styles:{
+      fontSize:4.7,
+      cellPadding:.7,
+      overflow:"linebreak",
+      valign:"top",
+      minCellHeight:4.5
     },
-    margin:{left:7,right:7}
+    headStyles:{
+      fontSize:4.9,
+      halign:"center",
+      valign:"middle",
+      minCellHeight:7
+    },
+    columnStyles:{
+      0:{cellWidth:22},
+      1:{cellWidth:54},
+      2:{cellWidth:7,halign:"center"},
+      3:{cellWidth:7,halign:"center"},
+      4:{cellWidth:29},
+      5:{cellWidth:7,halign:"center"},
+      6:{cellWidth:24},
+      7:{cellWidth:22},
+      8:{cellWidth:24},
+      9:{cellWidth:18},
+      10:{cellWidth:21},
+      11:{cellWidth:20},
+      12:{cellWidth:18},
+      13:{cellWidth:22},
+      14:{cellWidth:19},
+      15:{cellWidth:19},
+      16:{cellWidth:24},
+      17:{cellWidth:38},
+      18:{cellWidth:10,halign:"center",fontStyle:"bold"}
+    },
+    margin:{left:5,right:5,top:5,bottom:5},
+    didParseCell:function(data){
+      if(data.row.index===body.length-1){
+        data.cell.styles.fontStyle="bold";
+      }
+      if([2,3,5,18].includes(data.column.index)){
+        data.cell.styles.halign="center";
+      }
+    }
   });
+
   doc.save(`relatorio_geral_${state.semestreAtivo.replace(".","_")}.pdf`);
 }
 
@@ -1671,11 +1721,11 @@ function renderRelatorios(){
     <div class="table-scroll general-report-scroll">
       <table class="general-report-table">
         <thead><tr>
-          <th>Docente</th><th>Disciplinas / cálculo</th><th>Ensino</th><th>Regência</th>
+          <th>Docente</th><th>Disciplinas / cálculo</th><th>CH ensino</th><th>Regência</th>
           <th>Função/Portaria</th><th>CH função</th><th>Pesquisa</th><th>PIBIC</th>
           <th>Extensão</th><th>Monitoria</th><th>TCC</th><th>Mestrado</th>
           <th>Grupo de pesquisa</th><th>NDE</th><th>FIEL/FIEB</th><th>Comitê de Ética</th>
-          <th>Outras comissões</th><th>Portarias do semestre</th><th>Total</th>
+          <th>Outras comissões</th><th>Portarias do semestre</th><th>Total CH</th>
         </tr></thead>
         <tbody>
           ${geral.map(d=>`<tr>
@@ -1699,6 +1749,10 @@ function renderRelatorios(){
             <td>${d.portarias||"—"}</td>
             <td><strong>${d.total}</strong></td>
           </tr>`).join("")}
+          <tr class="total-row">
+            <td colspan="18"><strong>TOTAL GERAL</strong></td>
+            <td><strong>${geral.reduce((s,d)=>s+Number(d.total||0),0)}</strong></td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -1793,7 +1847,11 @@ function renderRelatorios(){
   panel.querySelector("#csv-geral").onclick=()=>{
     downloadCsv(
       `relatorio_geral_${state.semestreAtivo.replace(".","_")}.csv`,
-      [cabecalhoRelatorioGeral(),...geral.map(linhaRelatorioGeral)]
+      [
+        cabecalhoRelatorioGeral(),
+        ...geral.map(linhaRelatorioGeral),
+        ["TOTAL GERAL",...Array(cabecalhoRelatorioGeral().length-2).fill(""),geral.reduce((s,d)=>s+Number(d.total||0),0)]
+      ]
     );
   };
   panel.querySelector("#pdf-geral").onclick=()=>gerarPdfRelatorioGeral(geral);

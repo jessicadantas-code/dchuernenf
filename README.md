@@ -80,3 +80,11 @@ Foi acrescentado um relatório único consolidado, inspirado na planilha institu
 - total da carga horária.
 
 O relatório geral pode ser baixado em CSV (para abrir no Excel) e PDF.
+
+
+## Ajuste de layout do relatório geral — v7
+- colunas exclusivamente numéricas foram reduzidas;
+- coluna final renomeada para **Total CH**;
+- coluna Total CH foi fixada com largura pequena e destaque;
+- linha **TOTAL GERAL** adicionada ao final do relatório em tela, CSV e PDF;
+- PDF A3 reorganizado para manter Portarias e Total CH visíveis dentro da página.

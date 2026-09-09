@@ -308,3 +308,21 @@ input,select{width:100%;padding:.5rem .6rem;border:1px solid var(--border);borde
 .detail-list li{
   margin:.35rem 0;
 }
+
+.general-report-table th:nth-child(3),
+.general-report-table td:nth-child(3),
+.general-report-table th:nth-child(4),
+.general-report-table td:nth-child(4),
+.general-report-table th:nth-child(6),
+.general-report-table td:nth-child(6),
+.general-report-table th:nth-child(19),
+.general-report-table td:nth-child(19){
+  min-width:58px !important;
+  max-width:72px !important;
+  text-align:center;
+}
+.general-report-table .total-row td{
+  font-weight:700;
+  background:#f3f5f8;
+  border-top:2px solid var(--border);
+}
