@@ -56,3 +56,27 @@ Envie para a raiz do repositório:
 ## Importante
 Nesta etapa, os dados continuam salvos localmente no navegador.
 A integração compartilhada com n8n será feita após a validação funcional desta versão.
+
+
+## Relatório Geral Institucional — v6
+Foi acrescentado um relatório único consolidado, inspirado na planilha institucional fornecida:
+- uma linha por docente;
+- nome, matrícula, CPF e regime;
+- nomes das disciplinas e memória resumida de teoria/prática;
+- CH de ensino e regência;
+- função e portaria;
+- pesquisa;
+- PIBIC;
+- extensão;
+- monitoria;
+- TCC;
+- mestrado;
+- grupo de pesquisa;
+- NDE;
+- FIEL/FIEB;
+- Comitê de Ética;
+- outras comissões;
+- portarias/atos administrativos do semestre;
+- total da carga horária.
+
+O relatório geral pode ser baixado em CSV (para abrir no Excel) e PDF.

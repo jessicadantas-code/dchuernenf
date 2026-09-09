@@ -668,6 +668,207 @@ function detalhamentoDisciplinas(docenteId){
   return state.oferta.filter(of=>(of.docentes||[]).includes(docenteId)).map(of=>{ const c=calcDisciplinaParaDocente(of, docenteId); return {periodo:of.periodo,codigo:of.codigo,disciplina:of.nome,sala:c.sala,regencia:c.regencia}; });
 }
 
+
+function textoPortariasPorAtividade(docenteId, termos=[]){
+  const a=state.atividades[docenteId]||{};
+  const ps=(a.portarias||[]).filter(p=>p.status!=="revogada");
+  const termosNorm=termos.map(t=>String(t).toLowerCase());
+  return ps.filter(p=>{
+    const alvo=`${p.atividade||""} ${p.descricao||""}`.toLowerCase();
+    return termosNorm.length===0 || termosNorm.some(t=>alvo.includes(t));
+  }).map(p=>{
+    const partes=[p.numero||"Portaria sem número"];
+    if(p.data) partes.push(p.data);
+    if(p.atividade) partes.push(p.atividade);
+    return partes.join(" — ");
+  }).join("; ");
+}
+
+function textoTodasPortarias(docenteId){
+  const a=state.atividades[docenteId]||{};
+  return (a.portarias||[]).filter(p=>p.status!=="revogada").map(p=>{
+    let txt=p.numero||"Portaria sem número";
+    if(p.data) txt+=` (${p.data})`;
+    if(p.atividade) txt+=` — ${p.atividade}`;
+    if(p.status==="historico") txt+=" [histórico]";
+    if(p.status==="confirmar") txt+=" [confirmar vigência]";
+    return txt;
+  }).join("; ");
+}
+
+function disciplinasTextoDocente(docenteId){
+  return state.oferta
+    .filter(of=>(of.docentes||[]).includes(docenteId))
+    .map(of=>{
+      const c=calcDisciplinaParaDocente(of,docenteId);
+      let detalhe=`${of.codigo||""} ${of.nome||""}`.trim();
+      if(isUCE(of)) return `${detalhe} — UCE: 1h`;
+      const partes=[];
+      if(Number(of.teorica||0)>0) partes.push(`T ${c.teoricaSemanal.toFixed(2)}h/sem`);
+      if(Number(of.pratica||0)>0) partes.push(`P ${c.praticaSemanal.toFixed(2)}h/sem`);
+      if(of.praticaServico){
+        const mods=modulosDoDocente(of,docenteId);
+        if(mods.length) partes.push(`módulo(s): ${mods.map(m=>m.nome||m.grupo||"prático").join(", ")}`);
+      }
+      partes.push(`ensino ${c.sala}h`);
+      partes.push(`regência ${c.regencia}h`);
+      return `${detalhe} — ${partes.join(" | ")}`;
+    }).join("; ");
+}
+
+function descricaoAtividadeComPortaria(docenteId,descricao,termos=[]){
+  const port=textoPortariasPorAtividade(docenteId,termos);
+  return [descricao||"",port||""].filter(Boolean).join(" — ");
+}
+
+function dadosRelatorioGeral(){
+  return state.docentes.map(doc=>{
+    const at=state.atividades[doc.id]||atividadePadrao();
+    const r=calcResumoDocente(doc);
+    const ac=calcAtividadesDocente(doc.id);
+
+    const ndeDesc = at.nde==="coordenacao" ? "Coordenação do NDE" : at.nde==="membro" ? "Membro do NDE" : "";
+    const fielFieb=[];
+    if(at.fiel) fielFieb.push("FIEL");
+    if(at.fieb) fielFieb.push("FIEB");
+
+    const comissoes=(at.outrasComissoes||[]).map(c=>{
+      let t=c.nome||"Comissão";
+      if(c.portaria) t+=` — Portaria ${c.portaria}`;
+      if(Number(c.ch||0)) t+=` — ${Number(c.ch)}h`;
+      return t;
+    }).join("; ");
+
+    const funcPort=textoPortariasPorAtividade(doc.id,[
+      "chefe","coord","coorden","vice","proex","assessor","função","funcao"
+    ]);
+
+    const tccDesc=descricaoAtividadeComPortaria(doc.id,at.tccDescricao,["tcc","trabalho de conclusão","trabalho de conclusao"]);
+    const ndePort=descricaoAtividadeComPortaria(doc.id,ndeDesc,["nde","núcleo docente","nucleo docente"]);
+    const fielDesc=descricaoAtividadeComPortaria(doc.id,fielFieb.join(" / "),["fiel","fieb"]);
+    const cepDesc=at.comiteEtica ? descricaoAtividadeComPortaria(doc.id,"Comitê de Ética",["ética","etica","cep"]) : "";
+
+    return {
+      nome:doc.nome||"",
+      matricula:doc.matricula||"",
+      cpf:doc.cpf||"",
+      regime:doc.regime||"",
+      disciplinas:disciplinasTextoDocente(doc.id),
+      chEnsino:r.sala,
+      regencia:r.regencia,
+      funcao:[doc.funcao||"",funcPort].filter(Boolean).join(" — "),
+      chFuncao:Number(doc.chFuncao||0),
+      pesquisa:at.pesquisaDescricao||"",
+      chPesquisa:ac.pesquisaInstitucionalizada,
+      pibic:at.pibicDescricao||"",
+      chPibic:ac.coordProjetoPibic,
+      extensao:[at.extensaoCoordDescricao,at.extensaoMembroDescricao].filter(Boolean).join("; "),
+      chExtensao:ac.extensao,
+      monitoria:at.monitoriaDescricao||"",
+      chMonitoria:ac.monitoria,
+      tcc:tccDesc,
+      chTcc:ac.orientTcc,
+      mestrado:at.mestradoDescricao||"",
+      chMestrado:ac.orientMestrado,
+      grupo:at.grupoPesquisaNome ? `${at.grupoPesquisaNome}${at.grupoPesquisaLider?" (líder)":at.grupoPesquisaMembro?" (membro)":""}` : (at.grupoPesquisaLider?"Líder":at.grupoPesquisaMembro?"Membro":""),
+      chGrupo:ac.grupoPesquisa,
+      nde:ndePort,
+      chNde:ac.nde,
+      fielFieb:fielDesc,
+      chFielFieb:ac.fiel+ac.fieb,
+      comiteEtica:cepDesc,
+      chComiteEtica:ac.comiteEtica,
+      comissoes,
+      chComissoes:ac.outrasComissoes,
+      portarias:textoTodasPortarias(doc.id),
+      observacoes:at.observacoes||"",
+      status:at.preenchimentoStatus||"rascunho",
+      total:r.total
+    };
+  });
+}
+
+function cabecalhoRelatorioGeral(){
+  return [
+    "Nome completo","Matrícula","CPF","Regime",
+    "Disciplinas / memória de cálculo","CH ensino","Regência",
+    "Função/atividade + portaria","CH função",
+    "Pesquisa institucionalizada","CH pesquisa",
+    "PIBIC / coordenação de projeto","CH PIBIC",
+    "Extensão","CH extensão",
+    "Monitoria","CH monitoria",
+    "Orientações de TCC + portaria","CH TCC",
+    "Orientações de mestrado","CH mestrado",
+    "Grupo de pesquisa","CH grupo",
+    "NDE + portaria","CH NDE",
+    "FIEL/FIEB + portaria","CH FIEL/FIEB",
+    "Comitê de Ética + portaria","CH Comitê de Ética",
+    "Outras comissões + portaria","CH outras comissões",
+    "Portarias/atos administrativos do semestre",
+    "Observações","Status do preenchimento","Total CH atividades"
+  ];
+}
+
+function linhaRelatorioGeral(d){
+  return [
+    d.nome,d.matricula,d.cpf,d.regime,d.disciplinas,d.chEnsino,d.regencia,
+    d.funcao,d.chFuncao,d.pesquisa,d.chPesquisa,d.pibic,d.chPibic,
+    d.extensao,d.chExtensao,d.monitoria,d.chMonitoria,d.tcc,d.chTcc,
+    d.mestrado,d.chMestrado,d.grupo,d.chGrupo,d.nde,d.chNde,d.fielFieb,
+    d.chFielFieb,d.comiteEtica,d.chComiteEtica,d.comissoes,d.chComissoes,
+    d.portarias,d.observacoes,d.status,d.total
+  ];
+}
+
+function gerarPdfRelatorioGeral(dados){
+  if(!window.jspdf?.jsPDF){
+    alert("O gerador de PDF não foi carregado. Verifique sua conexão com a internet e tente novamente.");
+    return;
+  }
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a3"});
+  doc.setFontSize(14);
+  doc.text(`Relatório Geral de Carga Horária Docente — ${state.semestreAtivo}`,14,12);
+  doc.setFontSize(8);
+  doc.text("Relatório consolidado com disciplinas, cálculos, atividades e portarias.",14,18);
+
+  const head=[[
+    "Docente","Disciplinas / cálculo","Ensino","Reg.","Função/Portaria","CH função",
+    "Pesquisa","PIBIC","Extensão","Monitoria","TCC","Mestrado","Grupo",
+    "NDE","FIEL/FIEB","CEP","Comissões","Portarias","Total"
+  ]];
+
+  const body=dados.map(d=>[
+    d.nome,d.disciplinas,d.chEnsino,d.regencia,d.funcao,d.chFuncao,
+    d.pesquisa?`${d.pesquisa} (${d.chPesquisa}h)`:d.chPesquisa||"",
+    d.pibic?`${d.pibic} (${d.chPibic}h)`:d.chPibic||"",
+    d.extensao?`${d.extensao} (${d.chExtensao}h)`:d.chExtensao||"",
+    d.monitoria?`${d.monitoria} (${d.chMonitoria}h)`:d.chMonitoria||"",
+    d.tcc?`${d.tcc} (${d.chTcc}h)`:d.chTcc||"",
+    d.mestrado?`${d.mestrado} (${d.chMestrado}h)`:d.chMestrado||"",
+    d.grupo?`${d.grupo} (${d.chGrupo}h)`:d.chGrupo||"",
+    d.nde?`${d.nde} (${d.chNde}h)`:d.chNde||"",
+    d.fielFieb?`${d.fielFieb} (${d.chFielFieb}h)`:d.chFielFieb||"",
+    d.comiteEtica?`${d.comiteEtica} (${d.chComiteEtica}h)`:d.chComiteEtica||"",
+    d.comissoes?`${d.comissoes} (${d.chComissoes}h)`:d.chComissoes||"",
+    d.portarias,d.total
+  ]);
+
+  doc.autoTable({
+    head,body,startY:22,theme:"grid",
+    styles:{fontSize:5.2,cellPadding:1,overflow:"linebreak",valign:"top"},
+    headStyles:{fontSize:5.4},
+    columnStyles:{
+      0:{cellWidth:24},1:{cellWidth:52},4:{cellWidth:36},6:{cellWidth:28},
+      7:{cellWidth:28},8:{cellWidth:30},9:{cellWidth:26},10:{cellWidth:30},
+      11:{cellWidth:26},12:{cellWidth:22},13:{cellWidth:32},14:{cellWidth:28},
+      15:{cellWidth:28},16:{cellWidth:32},17:{cellWidth:42}
+    },
+    margin:{left:7,right:7}
+  });
+  doc.save(`relatorio_geral_${state.semestreAtivo.replace(".","_")}.pdf`);
+}
+
 function memoriaCalculoEnsino(){
   const linhas=[];
   state.oferta.forEach(of=>{
@@ -1449,7 +1650,59 @@ function renderRelatorios(){
   const memoria=memoriaCalculoEnsino();
   const memoriaFiltrada=state.relDocenteId?memoria.filter(m=>m.docente===docenteNome(state.relDocenteId)):memoria;
 
+  const geral=dadosRelatorioGeral();
+
   panel.innerHTML=`<div class="bar"><h2>Relatórios — ${state.semestreAtivo}</h2></div>
+
+  <div class="card report-general-card" style="margin-bottom:.8rem">
+    <div class="bar">
+      <div>
+        <h3>Relatório Geral Institucional</h3>
+        <div class="small">Uma única visão com docentes, disciplinas, cálculos, atividades e portarias.</div>
+      </div>
+      <div class="inline-actions">
+        <button id="csv-geral">Baixar relatório geral (CSV)</button>
+        <button id="pdf-geral">Baixar relatório geral (PDF)</button>
+      </div>
+    </div>
+    <div class="report-note">
+      Este é o relatório consolidado para conferência e encaminhamento. As disciplinas aparecem com teoria/prática por docente e as portarias são agregadas às respectivas atividades e também listadas em coluna própria.
+    </div>
+    <div class="table-scroll general-report-scroll">
+      <table class="general-report-table">
+        <thead><tr>
+          <th>Docente</th><th>Disciplinas / cálculo</th><th>Ensino</th><th>Regência</th>
+          <th>Função/Portaria</th><th>CH função</th><th>Pesquisa</th><th>PIBIC</th>
+          <th>Extensão</th><th>Monitoria</th><th>TCC</th><th>Mestrado</th>
+          <th>Grupo de pesquisa</th><th>NDE</th><th>FIEL/FIEB</th><th>Comitê de Ética</th>
+          <th>Outras comissões</th><th>Portarias do semestre</th><th>Total</th>
+        </tr></thead>
+        <tbody>
+          ${geral.map(d=>`<tr>
+            <td><strong>${d.nome}</strong><div class="small">${d.matricula||""}${d.regime?` • ${d.regime}`:""}</div></td>
+            <td>${d.disciplinas||"—"}</td>
+            <td><strong>${d.chEnsino}</strong></td>
+            <td>${d.regencia}</td>
+            <td>${d.funcao||"—"}</td>
+            <td>${d.chFuncao}</td>
+            <td>${d.pesquisa?`${d.pesquisa}<br><strong>${d.chPesquisa}h</strong>`:(d.chPesquisa?`${d.chPesquisa}h`:"—")}</td>
+            <td>${d.pibic?`${d.pibic}<br><strong>${d.chPibic}h</strong>`:(d.chPibic?`${d.chPibic}h`:"—")}</td>
+            <td>${d.extensao?`${d.extensao}<br><strong>${d.chExtensao}h</strong>`:(d.chExtensao?`${d.chExtensao}h`:"—")}</td>
+            <td>${d.monitoria?`${d.monitoria}<br><strong>${d.chMonitoria}h</strong>`:(d.chMonitoria?`${d.chMonitoria}h`:"—")}</td>
+            <td>${d.tcc?`${d.tcc}<br><strong>${d.chTcc}h</strong>`:(d.chTcc?`${d.chTcc}h`:"—")}</td>
+            <td>${d.mestrado?`${d.mestrado}<br><strong>${d.chMestrado}h</strong>`:(d.chMestrado?`${d.chMestrado}h`:"—")}</td>
+            <td>${d.grupo?`${d.grupo}<br><strong>${d.chGrupo}h</strong>`:(d.chGrupo?`${d.chGrupo}h`:"—")}</td>
+            <td>${d.nde?`${d.nde}<br><strong>${d.chNde}h</strong>`:(d.chNde?`${d.chNde}h`:"—")}</td>
+            <td>${d.fielFieb?`${d.fielFieb}<br><strong>${d.chFielFieb}h</strong>`:(d.chFielFieb?`${d.chFielFieb}h`:"—")}</td>
+            <td>${d.comiteEtica?`${d.comiteEtica}<br><strong>${d.chComiteEtica}h</strong>`:(d.chComiteEtica?`${d.chComiteEtica}h`:"—")}</td>
+            <td>${d.comissoes?`${d.comissoes}<br><strong>${d.chComissoes}h</strong>`:(d.chComissoes?`${d.chComissoes}h`:"—")}</td>
+            <td>${d.portarias||"—"}</td>
+            <td><strong>${d.total}</strong></td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
   <div class="card" style="margin-bottom:.8rem">
     <div class="bar">
@@ -1502,6 +1755,11 @@ function renderRelatorios(){
       <table><thead><tr><th>Docente</th><th>Sala</th><th>Regência</th><th>Função</th><th>Monitoria</th><th>Pesquisa</th><th>Coord. PIBIC</th><th>Extensão</th><th>Orient. TCC</th><th>Orient. Mestrado</th><th>Comissões</th><th>Total</th></tr></thead>
       <tbody><tr><td>${resumoDocente.nome}</td><td>${resumoDocente.sala}</td><td>${resumoDocente.regencia}</td><td>${Number(state.docentes.find(d=>d.id===resumoDocente.id)?.chFuncao||0)}</td><td>${resumoDocente.monitoria}</td><td>${resumoDocente.pesquisaInstitucionalizada+resumoDocente.grupoPesquisa}</td><td>${resumoDocente.coordProjetoPibic}</td><td>${resumoDocente.extensao}</td><td>${resumoDocente.orientTcc}</td><td>${resumoDocente.orientMestrado}</td><td>${resumoDocente.comissoes}</td><td>${resumoDocente.total}</td></tr></tbody></table>
 
+      <div class="card" style="margin-top:.8rem">
+        <div class="bar"><h4>Atividades e portarias</h4></div>
+        <ul class="detail-list">${buildResumoDetalhadoTexto(state.relDocenteId).map(t=>`<li>${t}</li>`).join("")}</ul>
+      </div>
+
       <div class="card" style="margin-top:.8rem"><div class="bar"><h4>Disciplinas do docente</h4></div>
       <table><thead><tr><th>Período</th><th>Código</th><th>Disciplina</th><th>CH sala</th><th>CH regência</th></tr></thead>
       <tbody>${detalhamentoDocente.map(item=>`<tr><td>${item.periodo}</td><td>${item.codigo}</td><td>${item.disciplina}</td><td>${item.sala}</td><td>${item.regencia}</td></tr>`).join("")}</tbody></table></div>
@@ -1531,6 +1789,14 @@ function renderRelatorios(){
     <table><thead><tr><th>Disciplina</th><th>Dia</th><th>Turno</th><th>Bloco inicial</th><th>Qtd.</th><th>Docentes</th></tr></thead>
     <tbody>${horariosPeriodo.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return `<tr><td>${of?.nome||""}</td><td>${h.dia}</td><td>${h.turno}</td><td>${h.blocoInicial}</td><td>${h.qtdBlocos}</td><td>${docs}</td></tr>`; }).join("")}</tbody></table>
   </div>`;
+
+  panel.querySelector("#csv-geral").onclick=()=>{
+    downloadCsv(
+      `relatorio_geral_${state.semestreAtivo.replace(".","_")}.csv`,
+      [cabecalhoRelatorioGeral(),...geral.map(linhaRelatorioGeral)]
+    );
+  };
+  panel.querySelector("#pdf-geral").onclick=()=>gerarPdfRelatorioGeral(geral);
 
   panel.querySelector("#rel-docente").onchange=e=>{ state.relDocenteId=e.target.value; render(); };
   panel.querySelector("#rel-periodo").onchange=e=>{ state.relPeriodo=e.target.value; render(); };

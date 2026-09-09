@@ -275,3 +275,36 @@ input,select{width:100%;padding:.5rem .6rem;border:1px solid var(--border);borde
   font-size:.9rem;
 }
 .table-scroll{overflow:auto}
+
+.report-general-card{
+  border-width:2px;
+}
+.general-report-scroll{
+  max-height:650px;
+}
+.general-report-table{
+  min-width:2400px;
+}
+.general-report-table th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#f0f4fa;
+}
+.general-report-table td{
+  vertical-align:top;
+  min-width:95px;
+  max-width:260px;
+  white-space:normal;
+}
+.general-report-table td:nth-child(1){min-width:180px}
+.general-report-table td:nth-child(2){min-width:360px}
+.general-report-table td:nth-child(5){min-width:260px}
+.general-report-table td:nth-child(18){min-width:320px}
+.detail-list{
+  margin:.25rem 0;
+  padding-left:1.25rem;
+}
+.detail-list li{
+  margin:.35rem 0;
+}
