@@ -39,11 +39,20 @@
   </main>
 
 <script>
-const STORAGE_KEY = "dch_uern_ppc2025_finalpkg_v1";
+const STORAGE_KEY = "dch_uern_app_data_v1";
+const LEGACY_STORAGE_KEYS = [
+  "dch_uern_ppc2025_finalpkg_v1",
+  "dch_uern_pkg_final_revisado_v1",
+  "dch_uern_full_fixed_v2",
+  "dch_uern_singlefile_v1",
+  "dch_uern_sprint14",
+  "dch_uern_sprint13",
+  "dch_uern_sprint12"
+];
 
 const tabs = [
   { key: "docentes", label: "Docentes" },
-  { key: "oferta", label: "Oferta 26.1" },
+  { key: "oferta", label: "Oferta" },
   { key: "atividades", label: "Atividades" },
   { key: "resumo", label: "Resumo" },
   { key: "horarios", label: "Horários" },
@@ -83,11 +92,15 @@ const state = {
   oferta: [],
   atividades: {},
   horarios: [],
+  semestres: {},
+  semestreAtivo: "2027.1",
   activeTab: "docentes",
   gradeFilters: { view: "turma", turma: "", docente: "" },
   resumoDocenteId: "",
   relDocenteId: "",
   relPeriodo: "",
+  fichaDocenteId: "",
+  atividadeDocenteId: "",
 };
 
 function uid(){ return Math.random().toString(36).slice(2,10); }
@@ -175,73 +188,439 @@ function buildCatalogo(){
   ];
 }
 function fromCatalogo(comp){
-  return { id:uid(), periodo:comp.periodo, codigo:comp.codigo, nome:comp.nome, teorica:comp.teorica, pratica:comp.pratica, orientacao:comp.orientacao, total:comp.total, tipo:comp.tipo||"obrigatoria", especial:comp.especial||"nao", docentes:[] };
+  return {
+    id:uid(), periodo:comp.periodo, codigo:comp.codigo, nome:comp.nome,
+    teorica:comp.teorica, pratica:comp.pratica, orientacao:comp.orientacao,
+    total:comp.total, tipo:comp.tipo||"obrigatoria", especial:comp.especial||"nao",
+    docentes:[],
+    praticaServico:false,
+    qtdModulosPraticos:0,
+    modulosPraticos:[]
+  };
+}
+function atividadePadrao(){
+  return {
+    pesquisaInstitucionalizadaQtd:0, coordProjetoPibicQtd:0, monitoriaQtd:0,
+    extensaoCoordenacaoQtd:0, extensaoMembroQtd:0,
+    grupoPesquisaMembro:false, grupoPesquisaLider:false,
+    nde:"none", fiel:false, fieb:false, comiteEtica:false,
+    orientacoesTcc:0, orientacoesMestrado:0,
+    outrasComissoes:[], portarias:[], observacoes:"",
+    pesquisaDescricao:"", pibicDescricao:"", monitoriaDescricao:"",
+    extensaoCoordDescricao:"", extensaoMembroDescricao:"",
+    grupoPesquisaNome:"", tccDescricao:"", mestradoDescricao:"",
+    preenchimentoStatus:"rascunho"
+  };
 }
 function syncAtividades(){
   const ids=new Set(state.docentes.map(d=>d.id));
   Object.keys(state.atividades).forEach(id=>{ if(!ids.has(id)) delete state.atividades[id]; });
   state.docentes.forEach(docente=>{
-    if(!state.atividades[docente.id]){
-      state.atividades[docente.id]={ pesquisaInstitucionalizadaQtd:0, coordProjetoPibicQtd:0, monitoriaQtd:0, extensaoCoordenacaoQtd:0, extensaoMembroQtd:0, grupoPesquisaMembro:false, grupoPesquisaLider:false, nde:"none", fiel:false, fieb:false, comiteEtica:false, orientacoesTcc:0, orientacoesMestrado:0, outrasComissoes:[] };
-    }
+    if(!state.atividades[docente.id]) state.atividades[docente.id]=atividadePadrao();
+    const a=state.atividades[docente.id];
+    if(!Array.isArray(a.outrasComissoes)) a.outrasComissoes=[];
+    if(!Array.isArray(a.portarias)) a.portarias=[];
+    if(typeof a.observacoes!=="string") a.observacoes="";
+    const camposTexto=["pesquisaDescricao","pibicDescricao","monitoriaDescricao","extensaoCoordDescricao","extensaoMembroDescricao","grupoPesquisaNome","tccDescricao","mestradoDescricao"];
+    camposTexto.forEach(c=>{ if(typeof a[c]!=="string") a[c]=""; });
+    if(!a.preenchimentoStatus) a.preenchimentoStatus="rascunho";
+    if(docente.matricula===undefined) docente.matricula="";
+    if(docente.cpf===undefined) docente.cpf="";
+    if(docente.titulacao===undefined) docente.titulacao="";
+    if(docente.lattes===undefined) docente.lattes="";
+    if(docente.email===undefined) docente.email="";
   });
 }
+
+
+function syncOfertaEstrutura(){
+  (state.oferta||[]).forEach(of=>{
+    if(of.praticaServico===undefined) of.praticaServico=false;
+    if(of.qtdModulosPraticos===undefined) of.qtdModulosPraticos=0;
+    if(!Array.isArray(of.modulosPraticos)) of.modulosPraticos=[];
+    of.modulosPraticos.forEach((m,idx)=>{
+      if(!m.id) m.id=uid();
+      if(m.nome===undefined) m.nome=`Módulo prático ${idx+1}`;
+      if(m.grupo===undefined) m.grupo=`Grupo ${idx+1}`;
+      if(m.docenteId===undefined) m.docenteId="";
+      if(m.local===undefined) m.local="";
+    });
+  });
+}
+
+function ajustarModulosPraticos(of){
+  if(!of.praticaServico){
+    of.qtdModulosPraticos=0;
+    of.modulosPraticos=[];
+    return;
+  }
+  let qtd=Math.max(0,Number(of.qtdModulosPraticos||0));
+  if(qtd===0 && (of.docentes||[]).length) qtd=(of.docentes||[]).length;
+  of.qtdModulosPraticos=qtd;
+
+  const atuais=Array.isArray(of.modulosPraticos)?of.modulosPraticos:[];
+  const novos=[];
+  for(let i=0;i<qtd;i++){
+    const existente=atuais[i]||{};
+    novos.push({
+      id:existente.id||uid(),
+      nome:existente.nome||`Módulo prático ${i+1}`,
+      grupo:existente.grupo||`Grupo ${i+1}`,
+      docenteId:existente.docenteId || (of.docentes||[])[i] || "",
+      local:existente.local||""
+    });
+  }
+  of.modulosPraticos=novos;
+}
+
+function modulosDoDocente(of,docenteId){
+  if(!of.praticaServico) return [];
+  return (of.modulosPraticos||[]).filter(m=>m.docenteId===docenteId);
+}
+
+function cloneData(obj){ return JSON.parse(JSON.stringify(obj)); }
+
+function periodosBasicosDoSemestre(semestre){
+  const sufixo = String(semestre||"").split(".").pop();
+  return sufixo === "2" ? ["P2","P4","P6","P8","P10"] : ["P1","P3","P5","P7","P9"];
+}
+
+function criarOfertaBasica(semestre){
+  const periodos = periodosBasicosDoSemestre(semestre);
+  return state.catalogo
+    .filter(c => periodos.includes(c.periodo))
+    .filter(c => c.tipo === "obrigatoria")
+    .filter(c => !isUCE(c))
+    .map(fromCatalogo);
+}
+
+function garantirSemestre(semestre, criarBase=true){
+  if(!state.semestres) state.semestres = {};
+  if(!state.semestres[semestre]){
+    state.semestres[semestre] = {
+      oferta: criarBase ? criarOfertaBasica(semestre) : [],
+      atividades: {},
+      horarios: []
+    };
+  }
+  return state.semestres[semestre];
+}
+
+function sincronizarSemestreAtual(){
+  if(!state.semestreAtivo) state.semestreAtivo = "2026.1";
+  if(!state.semestres) state.semestres = {};
+  state.semestres[state.semestreAtivo] = {
+    oferta: state.oferta || [],
+    atividades: state.atividades || {},
+    horarios: state.horarios || []
+  };
+}
+
+function carregarSemestre(semestre){
+  sincronizarSemestreAtual();
+  const dados = garantirSemestre(semestre, true);
+  state.semestreAtivo = semestre;
+  state.oferta = dados.oferta || [];
+  state.atividades = dados.atividades || {};
+  state.horarios = dados.horarios || [];
+  state.gradeFilters = {view:"turma", turma:"", docente:""};
+  state.relPeriodo = "";
+  syncAtividades();
+  syncOfertaEstrutura();
+}
+
+function listarSemestres(){
+  return Object.keys(state.semestres||{}).sort((a,b)=>{
+    const [aa,as] = a.split(".").map(Number);
+    const [ba,bs] = b.split(".").map(Number);
+    return aa===ba ? as-bs : aa-ba;
+  });
+}
+
+function criarNovoSemestre(){
+  const anoAtual = Number((state.semestreAtivo||"2027.1").split(".")[0]) || new Date().getFullYear();
+  const sugestao = `${anoAtual}.${(state.semestreAtivo||"").endsWith(".1") ? "2" : "1"}`;
+  const valor = prompt("Informe o semestre no formato AAAA.1 ou AAAA.2:", sugestao);
+  if(!valor) return;
+  const semestre = valor.trim();
+  if(!/^\d{4}\.[12]$/.test(semestre)){
+    alert("Use o formato AAAA.1 ou AAAA.2. Ex.: 2026.2");
+    return;
+  }
+  sincronizarSemestreAtual();
+  if(state.semestres[semestre]){
+    if(!confirm(`O semestre ${semestre} já existe. Deseja apenas abri-lo?`)) return;
+  } else {
+    state.semestres[semestre] = {
+      oferta: criarOfertaBasica(semestre),
+      atividades: {},
+      horarios: []
+    };
+  }
+  carregarSemestre(semestre);
+  render();
+}
+
+function duplicarSemestreAtual(){
+  const origem = state.semestreAtivo;
+  const destino = prompt("Duplicar para qual semestre? Use AAAA.1 ou AAAA.2:");
+  if(!destino) return;
+  const semestre = destino.trim();
+  if(!/^\d{4}\.[12]$/.test(semestre)){
+    alert("Use o formato AAAA.1 ou AAAA.2.");
+    return;
+  }
+  sincronizarSemestreAtual();
+  if(state.semestres[semestre] && !confirm(`O semestre ${semestre} já existe. Substituir seus dados?`)) return;
+  const copia = cloneData(state.semestres[origem]);
+  // Horários não são copiados automaticamente para evitar conflitos e reaproveitamento indevido.
+  copia.horarios = [];
+  // IDs da oferta são renovados; os vínculos de docentes são mantidos.
+  copia.oferta = (copia.oferta||[]).map(o=>({...o,id:uid()}));
+  state.semestres[semestre] = copia;
+  carregarSemestre(semestre);
+  render();
+}
+
+function renderSemesterBar(){
+  let bar = document.getElementById("semester-bar");
+  if(!bar){
+    bar = document.createElement("div");
+    bar.id = "semester-bar";
+    bar.className = "semester-bar";
+    const nav = document.getElementById("tabs");
+    nav.parentNode.insertBefore(bar, nav);
+  }
+  const semestres = listarSemestres();
+  bar.innerHTML = `
+    <div class="semester-info">
+      <strong>Semestre ativo</strong>
+      <select id="semester-select">
+        ${semestres.map(s=>`<option value="${s}" ${s===state.semestreAtivo?"selected":""}>${s}</option>`).join("")}
+      </select>
+      <span class="semester-note">Obrigatórias carregadas automaticamente; optativas, UCEs e especiais entram conforme a oferta real.</span>
+    </div>
+    <div class="semester-actions">
+      <button id="btn-new-semester">Criar semestre</button>
+      <button id="btn-duplicate-semester">Duplicar semestre</button>
+    </div>`;
+  bar.querySelector("#semester-select").onchange = e => { carregarSemestre(e.target.value); render(); };
+  bar.querySelector("#btn-new-semester").onclick = criarNovoSemestre;
+  bar.querySelector("#btn-duplicate-semester").onclick = duplicarSemestreAtual;
+}
+
 function seedData(){
   state.docentes = [
-    ["Jéssica Tinôco",4,"Chefe do departamento",4],["Jéssica Naiara",8,"Coord. Profsaude",8],["Maura Vanessa",4,"Chefe cursos Lato",4],["Rosangela Diniz",8,"Proex",8],["Linda Kátia",8,"",0],["Clécio Andre",8,"",0],["Ildone Fortes",8,"",0],["Izabel Calixta",8,"",0],["Liria Alvino",12,"",0],["Vinicius",20,"",0],["Raquel Mirtes",8,"",0],["CRISTYANNE SAMARA",8,"",0],["Roberta Kalily",8,"",0],["Roberta Luna",8,"",0],["Dulcian Azevedo",8,"Vice Profsaude",8],["Erika Fernandes",12,"",0],["Regilene Alves",8,"Vice chefe",8],
-  ].map(([nome,minimoSala,funcao,chFuncao])=>({id:uid(),nome,regime:"40h",minimoSala,funcao,chFuncao}));
+    ["Jéssica Tinôco",4,"Chefe do departamento",4],
+    ["Jéssica Naiara",8,"Coord. Profsaude",8],
+    ["Maura Vanessa",4,"Chefe cursos Lato",4],
+    ["Rosangela Diniz",8,"Proex",8],
+    ["Linda Kátia",8,"",0],
+    ["Clécio Andre",8,"",0],
+    ["Ildone Fortes",8,"",0],
+    ["Izabel Calixta",8,"",0],
+    ["Liria Alvino",12,"",0],
+    ["Vinicius",20,"",0],
+    ["Raquel Mirtes",8,"",0],
+    ["CRISTYANNE SAMARA",8,"",0],
+    ["Roberta Kalily",8,"",0],
+    ["Roberta Luna",8,"",0],
+    ["Dulcian Azevedo",8,"Vice Profsaude",8],
+    ["Erika Fernandes",12,"",0],
+    ["Regilene Alves",8,"Vice chefe",8],
+  ].map(([nome,minimoSala,funcao,chFuncao])=>({
+    id:uid(), nome, regime:"40h", minimoSala, funcao, chFuncao,
+    matricula:"", cpf:"", titulacao:"", lattes:"", email:""
+  }));
+
   state.catalogo = buildCatalogo();
-  state.oferta = [
-    fromCatalogo(state.catalogo.find(x=>x.codigo==="CAC0042")),
-    fromCatalogo(state.catalogo.find(x=>x.codigo==="CAC0048")),
-    fromCatalogo(state.catalogo.find(x=>x.codigo==="CAC0058")),
-    fromCatalogo(state.catalogo.find(x=>x.codigo==="CAC0063")),
-    fromCatalogo(state.catalogo.find(x=>x.codigo==="UCE0022")),
-  ].filter(Boolean);
-  state.oferta[0].docentes=[state.docentes[0].id,state.docentes[1].id];
-  state.oferta[1].docentes=[state.docentes[2].id];
-  state.oferta[2].docentes=[state.docentes[3].id,state.docentes[4].id];
-  state.oferta[3].docentes=[state.docentes[5].id,state.docentes[6].id];
-  state.oferta[4].docentes=[state.docentes[7].id];
-  state.horarios = [
-    {id:uid(),ofertaId:state.oferta[0].id,dia:"Segunda",turno:"Manhã",blocoInicial:1,qtdBlocos:5},
-    {id:uid(),ofertaId:state.oferta[0].id,dia:"Quarta",turno:"Manhã",blocoInicial:1,qtdBlocos:5},
-    {id:uid(),ofertaId:state.oferta[1].id,dia:"Terça",turno:"Manhã",blocoInicial:3,qtdBlocos:3},
-    {id:uid(),ofertaId:state.oferta[1].id,dia:"Quinta",turno:"Manhã",blocoInicial:3,qtdBlocos:3},
-    {id:uid(),ofertaId:state.oferta[2].id,dia:"Segunda",turno:"Tarde",blocoInicial:1,qtdBlocos:6},
-    {id:uid(),ofertaId:state.oferta[2].id,dia:"Quinta",turno:"Tarde",blocoInicial:1,qtdBlocos:6},
-    {id:uid(),ofertaId:state.oferta[4].id,dia:"Sexta",turno:"Manhã",blocoInicial:1,qtdBlocos:1},
-  ];
+  state.semestres = {};
+  state.semestreAtivo = "2027.1";
+  state.semestres["2026.1"] = {oferta:criarOfertaBasica("2026.1"), atividades:{}, horarios:[]};
+  state.semestres["2026.2"] = {oferta:criarOfertaBasica("2026.2"), atividades:{}, horarios:[]};
+  state.semestres["2027.1"] = {oferta:criarOfertaBasica("2027.1"), atividades:{}, horarios:[]};
+
+  // Cria atividades para os semestres disponíveis.
+  for(const sem of ["2026.1","2026.2","2027.1"]){
+    state.atividades = state.semestres[sem].atividades;
+    syncAtividades();
+  }
+
+  // Registros históricos identificados nos documentos do curso.
+  // Todos permanecem editáveis e podem ser removidos/atualizados pela coordenação.
+  function addPortaria(semestre, nomeDocente, portaria){
+    const d=state.docentes.find(x=>x.nome===nomeDocente);
+    if(!d) return;
+    const a=state.semestres[semestre].atividades[d.id];
+    if(a) a.portarias.push(portaria);
+  }
+
+  addPortaria("2026.1","Regilene Alves",{
+    id:uid(), atividade:"NDE / COSE",
+    numero:"Portaria-SEI Nº 580/2024",
+    data:"23/10/2024",
+    orgao:"UERN",
+    descricao:"Registro documental: representante do NDE e referência à coordenação da COSE.",
+    vigencia:"Histórico / confirmar vigência no semestre",
+    fonte:"Relatório atualizado do curso",
+    status:"confirmar"
+  });
+  addPortaria("2026.1","Izabel Calixta",{
+    id:uid(), atividade:"COSE",
+    numero:"Portaria SEI nº 91/2024",
+    data:"",
+    orgao:"UERN",
+    descricao:"Composição da Comissão Setorial de Avaliação como membro docente.",
+    vigencia:"Histórico / confirmar vigência no semestre",
+    fonte:"Relatório atualizado do curso",
+    status:"confirmar"
+  });
+  addPortaria("2026.1","Jéssica Naiara",{
+    id:uid(), atividade:"COSE",
+    numero:"Portaria SEI Nº 37/2022",
+    data:"21/02/2022",
+    orgao:"UERN",
+    descricao:"Composição anterior da COSE como membro docente.",
+    vigencia:"Histórico",
+    fonte:"Relatório atualizado do curso",
+    status:"historico"
+  });
+  addPortaria("2026.1","Rosangela Diniz",{
+    id:uid(), atividade:"COSE",
+    numero:"Portaria SEI Nº 37/2022",
+    data:"21/02/2022",
+    orgao:"UERN",
+    descricao:"Composição anterior da COSE como membro docente.",
+    vigencia:"Histórico",
+    fonte:"Relatório atualizado do curso",
+    status:"historico"
+  });
+  addPortaria("2026.1","Roberta Luna",{
+    id:uid(), atividade:"Capacitação docente",
+    numero:"Portaria nº 1258/2022-GP/FUERN",
+    data:"26/05/2022",
+    orgao:"GP/FUERN",
+    descricao:"Liberação para capacitação docente (Doutorado), conforme registro do relatório do curso.",
+    vigencia:"Histórico",
+    fonte:"Relatório atualizado do curso",
+    status:"historico"
+  });
+  addPortaria("2026.1","Roberta Luna",{
+    id:uid(), atividade:"Prorrogação de capacitação",
+    numero:"Portaria nº 845/2025-GP/FUERN",
+    data:"19/03/2025",
+    orgao:"GP/FUERN",
+    descricao:"Prorrogação por 12 meses do período de capacitação, conforme registro do relatório do curso.",
+    vigencia:"Confirmar situação atual",
+    fonte:"Relatório atualizado do curso",
+    status:"confirmar"
+  });
+
+  const dados = state.semestres[state.semestreAtivo];
+  state.oferta = dados.oferta;
+  state.atividades = dados.atividades;
+  state.horarios = dados.horarios;
   state.activeTab = "docentes";
-  state.gradeFilters = {view:"turma", turma:"P2", docente:""};
-  state.resumoDocenteId = state.docentes[0].id;
-  state.relDocenteId = state.docentes[0].id;
-  state.relPeriodo = "P2";
+  state.gradeFilters = {view:"turma", turma:"", docente:""};
+  state.resumoDocenteId = state.docentes[0]?.id || "";
+  state.relDocenteId = state.docentes[0]?.id || "";
+  state.fichaDocenteId = state.docentes[0]?.id || "";
+  state.atividadeDocenteId = state.docentes[0]?.id || "";
+  state.relPeriodo = "";
   syncAtividades();
 }
-function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-function loadState(){ const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return false; Object.assign(state, JSON.parse(raw)); syncAtividades(); return true; }
+function saveState(){
+  sincronizarSemestreAtual();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+function loadState(){
+  let raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw){
+    for(const key of LEGACY_STORAGE_KEYS){
+      raw = localStorage.getItem(key);
+      if(raw) break;
+    }
+  }
+  if(!raw) return false;
+  try{
+    const loaded = JSON.parse(raw);
+    Object.assign(state, loaded);
+    if(!state.catalogo || !state.catalogo.length) state.catalogo = buildCatalogo();
+
+    // Migra versões antigas que ainda não tinham separação por semestre.
+    if(!state.semestres || Object.keys(state.semestres).length===0){
+      const semestreMigrado = state.semestreAtivo || "2027.1";
+      state.semestres = {};
+      state.semestres[semestreMigrado] = {
+        oferta: state.oferta || [],
+        atividades: state.atividades || {},
+        horarios: state.horarios || []
+      };
+      state.semestreAtivo = semestreMigrado;
+    }
+
+    const dados = garantirSemestre(state.semestreAtivo || "2027.1", true);
+    state.oferta = dados.oferta || [];
+    state.atividades = dados.atividades || {};
+    state.horarios = dados.horarios || [];
+    syncAtividades();
+    syncOfertaEstrutura();
+    saveState(); // grava já na chave permanente
+    return true;
+  }catch(err){
+    console.error("Erro ao carregar dados salvos:", err);
+    return false;
+  }
+}
 
 function addOfertaFromCatalogo(codigo){
-  const comp=state.catalogo.find(c=>c.codigo===codigo); if(!comp) return; state.oferta.push(fromCatalogo(comp));
+  const comp=state.catalogo.find(c=>c.codigo===codigo); if(!comp) return;
+  if(state.oferta.some(o=>o.codigo===codigo)){
+    alert("Esse componente já está na oferta deste semestre.");
+    return;
+  }
+  state.oferta.push(fromCatalogo(comp));
 }
 function addPeriodoFromCatalogo(periodo){
-  state.catalogo.filter(c=>c.periodo===periodo).forEach(comp=>state.oferta.push(fromCatalogo(comp)));
+  state.catalogo
+    .filter(c=>c.periodo===periodo)
+    .filter(c=>c.tipo==="obrigatoria")
+    .filter(c=>!isUCE(c))
+    .forEach(comp=>{
+      if(!state.oferta.some(o=>o.codigo===comp.codigo)) state.oferta.push(fromCatalogo(comp));
+    });
 }
 function calcBlocosNecessarios(of){
   if(isUCE(of)) return 1;
   return blocksFromHours(of.total || (Number(of.teorica||0)+Number(of.pratica||0)+Number(of.orientacao||0)), 15);
 }
 function calcDisciplinaParaDocente(of, docenteId){
-  if(!(of.docentes||[]).includes(docenteId)) return {sala:0, regencia:0};
-  if(isUCE(of)) return {sala:1, regencia:0};
+  if(!(of.docentes||[]).includes(docenteId)) return {sala:0, regencia:0, teoricaSemanal:0, praticaSemanal:0, modulos:0};
+  if(isUCE(of)) return {sala:1, regencia:0, teoricaSemanal:0, praticaSemanal:0, modulos:0};
+
   const n=(of.docentes||[]).length || 1;
   const multiplicador=isEspecialIndividual(of) ? 0.5 : 1;
   const teoricaSemanal=(weeklyHours(of.teorica,15)/n)*multiplicador;
-  const praticaSemanal=weeklyHours(of.pratica,15)*multiplicador;
+
+  let praticaSemanal=0;
+  let modulos=0;
+
+  if(of.praticaServico){
+    const mods=modulosDoDocente(of,docenteId);
+    modulos=mods.length;
+    praticaSemanal=weeklyHours(of.pratica,15)*modulos*multiplicador;
+  }else{
+    // Mantém a regra já validada nas versões anteriores:
+    // a CH prática do componente é integral para cada docente participante.
+    praticaSemanal=weeklyHours(of.pratica,15)*multiplicador;
+  }
+
   return {
     sala: roundInt(teoricaSemanal + praticaSemanal),
     regencia: roundInt(teoricaSemanal + (praticaSemanal * 0.5)),
+    teoricaSemanal,
+    praticaSemanal,
+    modulos
   };
 }
 function calcAtividadesDocente(docenteId){
@@ -258,8 +637,8 @@ function calcAtividadesDocente(docenteId){
     grupoPesquisaMembro: a.grupoPesquisaMembro ? 1 : 0,
     grupoPesquisaLider: a.grupoPesquisaLider ? 2 : 0,
     grupoPesquisa: (a.grupoPesquisaMembro?1:0)+(a.grupoPesquisaLider?2:0),
-    orientTccQtd: Number(a.orientacoesTcc||0),
-    orientTcc: Number(a.orientacoesTcc||0)*2,
+    orientTccQtd: Math.min(Number(a.orientacoesTcc||0),4),
+    orientTcc: Math.min(Number(a.orientacoesTcc||0),4)*2,
     orientMestradoQtd: Number(a.orientacoesMestrado||0),
     orientMestrado: Number(a.orientacoesMestrado||0)*3,
     nde,
@@ -288,22 +667,70 @@ function calcResumoDocente(docente){
 function detalhamentoDisciplinas(docenteId){
   return state.oferta.filter(of=>(of.docentes||[]).includes(docenteId)).map(of=>{ const c=calcDisciplinaParaDocente(of, docenteId); return {periodo:of.periodo,codigo:of.codigo,disciplina:of.nome,sala:c.sala,regencia:c.regencia}; });
 }
+
+function memoriaCalculoEnsino(){
+  const linhas=[];
+  state.oferta.forEach(of=>{
+    if(isUCE(of)){
+      (of.docentes||[]).forEach(docenteId=>{
+        linhas.push({
+          periodo:of.periodo,codigo:of.codigo,disciplina:of.nome,docente:docenteNome(docenteId),
+          chT:Number(of.teorica||0),chP:Number(of.pratica||0),nDoc:(of.docentes||[]).length,
+          teoriaDoc:0,praticaDoc:1,modulo:"UCE",sala:1,regencia:0,tipoPratica:"UCE"
+        });
+      });
+      return;
+    }
+    (of.docentes||[]).forEach(docenteId=>{
+      const c=calcDisciplinaParaDocente(of,docenteId);
+      const mods=modulosDoDocente(of,docenteId);
+      const moduloTxt=of.praticaServico
+        ? (mods.length?mods.map(m=>`${m.nome||"Módulo"}${m.grupo?` / ${m.grupo}`:""}`).join("; "):"Sem módulo atribuído")
+        : (Number(of.pratica||0)>0?"Prática integral por docente":"—");
+      linhas.push({
+        periodo:of.periodo,codigo:of.codigo,disciplina:of.nome,docente:docenteNome(docenteId),
+        chT:Number(of.teorica||0),chP:Number(of.pratica||0),nDoc:(of.docentes||[]).length,
+        teoriaDoc:c.teoricaSemanal,praticaDoc:c.praticaSemanal,modulo:moduloTxt,
+        sala:c.sala,regencia:c.regencia,
+        tipoPratica:of.praticaServico?"Prática em serviço/grupos":(Number(of.pratica||0)>0?"Prática integral":"Sem prática")
+      });
+    });
+  });
+  return linhas;
+}
+
 function buildResumoDetalhadoTexto(docenteId){
-  const a=calcAtividadesDocente(docenteId), linhas=[];
-  linhas.push(`Pesquisa institucionalizada: ${a.flags.pesquisaInstitucionalizadaQtd||0} item(ns) = ${a.pesquisaInstitucionalizada}h`);
-  linhas.push(`Coordenação PIBIC: ${a.flags.coordProjetoPibicQtd||0} item(ns) = ${a.coordProjetoPibic}h`);
-  linhas.push(`Monitoria: ${a.flags.monitoriaQtd||0} item(ns) = ${a.monitoria}h`);
-  linhas.push(`Extensão coordenação: ${a.extensaoCoordQtd} ação(ões) = ${a.extensaoCoordQtd*8}h`);
-  linhas.push(`Extensão membro: ${a.extensaoMembroQtd} ação(ões) = ${a.extensaoMembroQtd*4}h`);
-  linhas.push(`Grupo de pesquisa membro: ${a.flags.grupoPesquisaMembro ? "Sim (1h)" : "Não"}`);
-  linhas.push(`Grupo de pesquisa líder: ${a.flags.grupoPesquisaLider ? "Sim (2h)" : "Não"}`);
-  linhas.push(`NDE: ${a.flags.nde==="coordenacao" ? "Coordenação (8h)" : a.flags.nde==="membro" ? "Membro (2h)" : "Não"}`);
-  linhas.push(`FIEL: ${a.flags.fiel ? "Sim (2h)" : "Não"}`);
-  linhas.push(`FIEB: ${a.flags.fieb ? "Sim (2h)" : "Não"}`);
-  linhas.push(`Comitê de Ética: ${a.flags.comiteEtica ? "Sim (8h)" : "Não"}`);
-  linhas.push(`Orientações TCC: ${a.orientTccQtd} aluno(s) = ${a.orientTcc}h`);
-  linhas.push(`Orientações Mestrado: ${a.orientMestradoQtd} orientando(s) = ${a.orientMestrado}h`);
-  (a.flags.outrasComissoes||[]).forEach(item=>linhas.push(`Comissão: ${item.nome||"(sem nome)"} = ${item.ch||0}h`));
+  const a=calcAtividadesDocente(docenteId), f=a.flags||{}, linhas=[];
+  const detalhe=(texto,desc)=>desc?`${texto} — ${desc.replace(/\n+/g,"; ")}`:texto;
+
+  linhas.push(detalhe(`Pesquisa institucionalizada: ${f.pesquisaInstitucionalizadaQtd||0} item(ns) = ${a.pesquisaInstitucionalizada}h`,f.pesquisaDescricao));
+  linhas.push(detalhe(`Coordenação PIBIC: ${f.coordProjetoPibicQtd||0} projeto(s) = ${a.coordProjetoPibic}h`,f.pibicDescricao));
+  linhas.push(detalhe(`Monitoria: ${f.monitoriaQtd||0} item(ns) = ${a.monitoria}h`,f.monitoriaDescricao));
+  linhas.push(detalhe(`Extensão coordenação: ${a.extensaoCoordQtd} ação(ões) = ${a.extensaoCoordQtd*8}h`,f.extensaoCoordDescricao));
+  linhas.push(detalhe(`Extensão membro: ${a.extensaoMembroQtd} ação(ões) = ${a.extensaoMembroQtd*4}h`,f.extensaoMembroDescricao));
+
+  const gp=[];
+  if(f.grupoPesquisaMembro) gp.push("membro (1h)");
+  if(f.grupoPesquisaLider) gp.push("líder (2h)");
+  linhas.push(`Grupo de pesquisa: ${gp.length?gp.join(" + "):"Não"}${f.grupoPesquisaNome?` — ${f.grupoPesquisaNome}`:""}`);
+
+  linhas.push(`NDE: ${f.nde==="coordenacao" ? "Coordenação (8h)" : f.nde==="membro" ? "Membro (2h)" : "Não"}`);
+  linhas.push(`FIEL: ${f.fiel ? "Sim (2h)" : "Não"}`);
+  linhas.push(`FIEB: ${f.fieb ? "Sim (2h)" : "Não"}`);
+  linhas.push(`Comitê de Ética: ${f.comiteEtica ? "Sim (8h)" : "Não"}`);
+  linhas.push(detalhe(`Orientações TCC: ${a.orientTccQtd} orientando(s) = ${a.orientTcc}h`,f.tccDescricao));
+  linhas.push(detalhe(`Orientações Mestrado: ${a.orientMestradoQtd} orientando(s) = ${a.orientMestrado}h`,f.mestradoDescricao));
+
+  (f.outrasComissoes||[]).forEach(item=>{
+    linhas.push(`Comissão: ${item.nome||"(sem nome)"} = ${item.ch||0}h${item.portaria?` — Portaria ${item.portaria}`:""}`);
+  });
+
+  const at=state.atividades[docenteId]||{};
+  (at.portarias||[]).filter(p=>p.status!=="revogada").forEach(p=>{
+    linhas.push(`Portaria/ato: ${p.atividade||"atividade"} — ${p.numero||"sem número"}${p.data?` (${p.data})`:""} — ${p.status==="historico"?"histórico":p.status==="confirmar"?"confirmar vigência":"vigente"}`);
+  });
+  linhas.push(`Situação do preenchimento: ${at.preenchimentoStatus==="validado"?"Validado pela coordenação":at.preenchimentoStatus==="enviado"?"Enviado pelo docente":at.preenchimentoStatus==="ajuste"?"Necessita ajuste":"Rascunho"}`);
+  if(at.observacoes) linhas.push(`Observações: ${at.observacoes}`);
   return linhas;
 }
 function expandHorarioItem(item){
@@ -337,64 +764,510 @@ function renderChoiceWrap(ofertaIndex, selectedIds){
 }
 function renderDocentes(){
   const panel=document.getElementById("panel-docentes");
-  panel.innerHTML=`<div class="bar"><h2>Docentes</h2><button id="add-docente">Adicionar docente</button></div>
-  <div class="card"><table><thead><tr><th>Nome</th><th>Regime</th><th>Mínimo sala</th><th>Função</th><th>CH função</th><th></th></tr></thead><tbody>
-  ${state.docentes.map((docente,i)=>`<tr><td><input data-docente="${i}" data-f="nome" value="${docente.nome||""}" /></td><td><select data-docente="${i}" data-f="regime"><option value="20h" ${docente.regime==="20h"?"selected":""}>20h</option><option value="40h" ${docente.regime==="40h"?"selected":""}>40h</option><option value="DE" ${docente.regime==="DE"?"selected":""}>DE</option></select></td><td><input type="number" data-docente="${i}" data-f="minimoSala" value="${docente.minimoSala||0}" /></td><td><input data-docente="${i}" data-f="funcao" value="${docente.funcao||""}" /></td><td><input type="number" data-docente="${i}" data-f="chFuncao" value="${docente.chFuncao||0}" /></td><td><button data-del-docente="${i}">Excluir</button></td></tr>`).join("")}
-  </tbody></table></div>`;
-  panel.querySelector("#add-docente").onclick=()=>{ state.docentes.push({id:uid(),nome:"",regime:"40h",minimoSala:12,funcao:"",chFuncao:0}); syncAtividades(); render(); };
-  panel.querySelectorAll("[data-docente]").forEach(el=>el.onchange=()=>{ const d=state.docentes[Number(el.dataset.docente)]; d[el.dataset.f]=el.type==="number"?Number(el.value):el.value; render(); });
-  panel.querySelectorAll("[data-del-docente]").forEach(btn=>btn.onclick=()=>{ const idx=Number(btn.dataset.delDocente); const docenteId=state.docentes[idx].id; state.docentes.splice(idx,1); state.oferta.forEach(of=>of.docentes=(of.docentes||[]).filter(id=>id!==docenteId)); delete state.atividades[docenteId]; render(); });
+  if(!state.fichaDocenteId || !state.docentes.some(d=>d.id===state.fichaDocenteId)){
+    state.fichaDocenteId=state.docentes[0]?.id||"";
+  }
+  const docente=state.docentes.find(d=>d.id===state.fichaDocenteId);
+  const a=docente ? state.atividades[docente.id] : null;
+
+  panel.innerHTML=`
+  <div class="bar">
+    <div>
+      <h2>Ficha do docente</h2>
+      <div class="small">Dados cadastrais permanentes + informações e portarias do semestre ${state.semestreAtivo}.</div>
+    </div>
+    <button id="add-docente">Adicionar docente</button>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <div class="grid ficha-top">
+      <div>
+        <label>Docente</label>
+        <select id="sel-ficha-docente">
+          ${state.docentes.map(d=>`<option value="${d.id}" ${d.id===state.fichaDocenteId?"selected":""}>${d.nome||"(sem nome)"}</option>`).join("")}
+        </select>
+      </div>
+      <div class="status-box">
+        <strong>Semestre:</strong> ${state.semestreAtivo}<br>
+        <span class="small">Portarias deste bloco pertencem ao semestre ativo e podem ser editadas a qualquer momento.</span>
+      </div>
+    </div>
+  </div>
+
+  ${docente ? `
+  <div class="card" style="margin-bottom:1rem">
+    <div class="bar"><h3>Dados cadastrais</h3><span class="small">Estes dados acompanham o docente entre os semestres.</span></div>
+    <div class="grid">
+      <div><label>Nome completo</label><input data-ficha-doc="${docente.id}" data-f="nome" value="${docente.nome||""}"></div>
+      <div><label>Matrícula</label><input data-ficha-doc="${docente.id}" data-f="matricula" value="${docente.matricula||""}"></div>
+      <div><label>CPF</label><input data-ficha-doc="${docente.id}" data-f="cpf" value="${docente.cpf||""}"></div>
+      <div><label>Regime</label>
+        <select data-ficha-doc="${docente.id}" data-f="regime">
+          <option value="20h" ${docente.regime==="20h"?"selected":""}>20h</option>
+          <option value="40h" ${docente.regime==="40h"?"selected":""}>40h</option>
+          <option value="DE" ${docente.regime==="DE"?"selected":""}>DE</option>
+        </select>
+      </div>
+      <div><label>Titulação</label><input data-ficha-doc="${docente.id}" data-f="titulacao" value="${docente.titulacao||""}"></div>
+      <div><label>E-mail institucional</label><input data-ficha-doc="${docente.id}" data-f="email" value="${docente.email||""}"></div>
+      <div><label>Endereço Lattes</label><input data-ficha-doc="${docente.id}" data-f="lattes" value="${docente.lattes||""}"></div>
+      <div><label>Mínimo de sala de aula</label><input type="number" min="0" data-ficha-doc="${docente.id}" data-f="minimoSala" value="${docente.minimoSala||0}"></div>
+      <div><label>Função/atividade informada</label><input data-ficha-doc="${docente.id}" data-f="funcao" value="${docente.funcao||""}"></div>
+      <div><label>CH da função</label><input type="number" min="0" data-ficha-doc="${docente.id}" data-f="chFuncao" value="${docente.chFuncao||0}"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <div class="bar">
+      <div>
+        <h3>Portarias e atos administrativos — ${state.semestreAtivo}</h3>
+        <div class="small">Os registros pré-carregados são apenas ponto de partida. Edite, substitua ou exclua conforme a portaria vigente.</div>
+      </div>
+      <button id="add-portaria">Adicionar portaria</button>
+    </div>
+    <div class="portarias-list">
+      ${(a?.portarias||[]).length ? (a.portarias||[]).map((p,idx)=>`
+        <div class="portaria-card">
+          <div class="grid">
+            <div><label>Atividade / vínculo</label><input data-portaria="${idx}" data-pf="atividade" value="${p.atividade||""}"></div>
+            <div><label>Número da portaria</label><input data-portaria="${idx}" data-pf="numero" value="${p.numero||""}"></div>
+            <div><label>Data</label><input data-portaria="${idx}" data-pf="data" value="${p.data||""}" placeholder="dd/mm/aaaa"></div>
+            <div><label>Órgão</label><input data-portaria="${idx}" data-pf="orgao" value="${p.orgao||""}"></div>
+            <div><label>Vigência</label><input data-portaria="${idx}" data-pf="vigencia" value="${p.vigencia||""}"></div>
+            <div><label>Status</label>
+              <select data-portaria="${idx}" data-pf="status">
+                <option value="vigente" ${p.status==="vigente"?"selected":""}>Vigente</option>
+                <option value="confirmar" ${p.status==="confirmar"?"selected":""}>Confirmar vigência</option>
+                <option value="historico" ${p.status==="historico"?"selected":""}>Histórico</option>
+                <option value="revogada" ${p.status==="revogada"?"selected":""}>Revogada/Substituída</option>
+              </select>
+            </div>
+            <div class="span-2"><label>Descrição</label><textarea data-portaria="${idx}" data-pf="descricao">${p.descricao||""}</textarea></div>
+            <div class="span-2"><label>Fonte / observação</label><input data-portaria="${idx}" data-pf="fonte" value="${p.fonte||""}"></div>
+          </div>
+          <div class="actions-right">
+            <button class="danger-lite" data-del-portaria="${idx}">Excluir esta portaria</button>
+          </div>
+        </div>`).join("") : `<div class="empty-state">Nenhuma portaria cadastrada para este docente no semestre ${state.semestreAtivo}.</div>`}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar"><h3>Observações do docente no semestre</h3></div>
+    <textarea id="obs-docente-semestre" rows="4" placeholder="Informações adicionais que devem acompanhar a conferência/relatório...">${a?.observacoes||""}</textarea>
+  </div>
+
+  <div class="danger-zone">
+    <button id="del-docente-atual" class="danger-lite">Excluir docente do sistema</button>
+  </div>
+  ` : `<div class="card">Nenhum docente cadastrado.</div>`}
+  `;
+
+  panel.querySelector("#add-docente").onclick=()=>{
+    const novo={id:uid(),nome:"Novo docente",regime:"40h",minimoSala:12,funcao:"",chFuncao:0,matricula:"",cpf:"",titulacao:"",lattes:"",email:""};
+    state.docentes.push(novo);
+    state.fichaDocenteId=novo.id;
+    syncAtividades();
+    render();
+  };
+
+  const sel=panel.querySelector("#sel-ficha-docente");
+  if(sel) sel.onchange=e=>{ state.fichaDocenteId=e.target.value; render(); };
+
+  panel.querySelectorAll("[data-ficha-doc]").forEach(el=>el.onchange=()=>{
+    const d=state.docentes.find(x=>x.id===el.dataset.fichaDoc);
+    if(!d) return;
+    d[el.dataset.f]=el.type==="number"?Number(el.value):el.value;
+    render();
+  });
+
+  const addP=panel.querySelector("#add-portaria");
+  if(addP) addP.onclick=()=>{
+    state.atividades[docente.id].portarias.push({
+      id:uid(),atividade:"",numero:"",data:"",orgao:"UERN",
+      descricao:"",vigencia:"",fonte:"",status:"vigente"
+    });
+    render();
+  };
+
+  panel.querySelectorAll("[data-portaria]").forEach(el=>el.onchange=()=>{
+    const idx=Number(el.dataset.portaria);
+    const p=state.atividades[docente.id].portarias[idx];
+    if(!p) return;
+    p[el.dataset.pf]=el.value;
+    render();
+  });
+
+  panel.querySelectorAll("[data-del-portaria]").forEach(btn=>btn.onclick=()=>{
+    const idx=Number(btn.dataset.delPortaria);
+    const p=state.atividades[docente.id].portarias[idx];
+    if(!confirm(`Excluir a portaria "${p?.numero||"sem número"}" deste semestre?`)) return;
+    state.atividades[docente.id].portarias.splice(idx,1);
+    render();
+  });
+
+  const obs=panel.querySelector("#obs-docente-semestre");
+  if(obs) obs.onchange=()=>{ state.atividades[docente.id].observacoes=obs.value; render(); };
+
+  const del=panel.querySelector("#del-docente-atual");
+  if(del) del.onclick=()=>{
+    if(!confirm(`Excluir ${docente.nome} do sistema? Esta ação também remove seus vínculos das ofertas e atividades.`)) return;
+    const docenteId=docente.id;
+    state.docentes=state.docentes.filter(d=>d.id!==docenteId);
+    Object.values(state.semestres||{}).forEach(sem=>{
+      (sem.oferta||[]).forEach(of=>of.docentes=(of.docentes||[]).filter(id=>id!==docenteId));
+      if(sem.atividades) delete sem.atividades[docenteId];
+    });
+    state.fichaDocenteId=state.docentes[0]?.id||"";
+    render();
+  };
 }
 function renderOferta(){
+  syncOfertaEstrutura();
   const panel=document.getElementById("panel-oferta");
   const periodosCatalogo=[...new Set(state.catalogo.map(c=>c.periodo))];
-  panel.innerHTML=`<div class="bar"><h2>Oferta 26.1</h2></div>
-  <div class="help">Catálogo atualizado com o PPC 2025. Aqui você pode adicionar disciplina isolada ou período inteiro. Disciplinas especiais continuam podendo ser inseridas manualmente.</div>
+
+  panel.innerHTML=`<div class="bar"><h2>Oferta ${state.semestreAtivo}</h2></div>
+  <div class="help">
+    As disciplinas obrigatórias da estrutura básica já vêm carregadas conforme o semestre .1 ou .2.
+    Optativas, UCEs e componentes especiais entram conforme a oferta real. Para disciplinas com prática em serviços,
+    marque <strong>Prática em serviço/grupos</strong> e informe a quantidade de módulos práticos.
+  </div>
+
   <div class="card" style="margin-bottom:.8rem"><div class="grid">
-    <div><label>Adicionar disciplina do catálogo</label><select id="sel-disciplina-catalogo"><option value="">Selecione</option>${state.catalogo.map(comp=>`<option value="${comp.codigo}">${comp.periodo} — ${comp.codigo} — ${comp.nome}</option>`).join("")}</select></div>
+    <div><label>Adicionar disciplina do catálogo</label><select id="sel-disciplina-catalogo"><option value="">Selecione</option>${state.catalogo.filter(comp=>comp.tipo==="optativa" || isUCE(comp)).map(comp=>`<option value="${comp.codigo}">${comp.tipo==="optativa"?"Optativa":"UCE"} — ${comp.codigo} — ${comp.nome}</option>`).join("")}</select></div>
     <div><button id="btn-add-disciplina-catalogo">Adicionar disciplina</button></div>
     <div><label>Adicionar período inteiro</label><select id="sel-periodo-catalogo"><option value="">Selecione</option>${periodosCatalogo.map(p=>`<option value="${p}">${p}</option>`).join("")}</select></div>
     <div><button id="btn-add-periodo-catalogo">Adicionar período</button></div>
   </div></div>
+
   <div class="bar"><button id="add-oferta-manual">Adicionar disciplina manual</button></div>
-  <div class="card"><table><thead><tr><th>Período</th><th>Tipo</th><th>Especial</th><th>Código</th><th>Disciplina</th><th>CH Teórica</th><th>CH Prática</th><th>CH Orientação</th><th>Blocos/semana</th><th>Docentes</th><th></th></tr></thead><tbody>
-  ${state.oferta.map((oferta,i)=>`<tr><td><input data-oferta="${i}" data-f="periodo" value="${oferta.periodo||""}" /></td><td><select data-oferta="${i}" data-f="tipo"><option value="obrigatoria" ${oferta.tipo==="obrigatoria"?"selected":""}>Obrigatória</option><option value="optativa" ${oferta.tipo==="optativa"?"selected":""}>Optativa</option><option value="especial" ${oferta.tipo==="especial"?"selected":""}>Especial</option></select></td><td><select data-oferta="${i}" data-f="especial"><option value="nao" ${oferta.especial==="nao"?"selected":""}>Não</option><option value="individual" ${oferta.especial==="individual"?"selected":""}>Individual (50%)</option><option value="turma" ${oferta.especial==="turma"?"selected":""}>Turma especial (100%)</option></select></td><td><input data-oferta="${i}" data-f="codigo" value="${oferta.codigo||""}" /></td><td><input data-oferta="${i}" data-f="nome" value="${oferta.nome||""}" /></td><td><input type="number" data-oferta="${i}" data-f="teorica" value="${oferta.teorica||0}" /></td><td><input type="number" data-oferta="${i}" data-f="pratica" value="${oferta.pratica||0}" /></td><td><input type="number" data-oferta="${i}" data-f="orientacao" value="${oferta.orientacao||0}" /></td><td><strong>${calcBlocosNecessarios(oferta)}</strong></td><td>${renderChoiceWrap(i, oferta.docentes||[])}</td><td><button data-del-oferta="${i}">Excluir</button></td></tr>`).join("")}
-  </tbody></table></div>`;
-  panel.querySelector("#btn-add-disciplina-catalogo").onclick=()=>{ const codigo=panel.querySelector("#sel-disciplina-catalogo").value; if(!codigo) return; addOfertaFromCatalogo(codigo); render(); };
-  panel.querySelector("#btn-add-periodo-catalogo").onclick=()=>{ const p=panel.querySelector("#sel-periodo-catalogo").value; if(!p) return; addPeriodoFromCatalogo(p); render(); };
-  panel.querySelector("#add-oferta-manual").onclick=()=>{ state.oferta.push({id:uid(),periodo:"",codigo:"",nome:"",teorica:0,pratica:0,orientacao:0,total:0,tipo:"obrigatoria",especial:"nao",docentes:[]}); render(); };
-  panel.querySelectorAll("[data-oferta]").forEach(el=>el.onchange=()=>{ const of=state.oferta[Number(el.dataset.oferta)]; of[el.dataset.f]=el.type==="number"?Number(el.value):el.value; of.total=Number(of.teorica||0)+Number(of.pratica||0)+Number(of.orientacao||0); render(); });
-  panel.querySelectorAll("[data-del-oferta]").forEach(btn=>btn.onclick=()=>{ const idx=Number(btn.dataset.delOferta); const id=state.oferta[idx].id; state.oferta.splice(idx,1); state.horarios=state.horarios.filter(h=>h.ofertaId!==id); render(); });
-  panel.querySelectorAll("[data-oferta-doc]").forEach(cb=>cb.onchange=()=>{ const of=state.oferta[Number(cb.dataset.ofertaDoc)]; const docenteId=cb.dataset.docId; of.docentes=of.docentes||[]; if(cb.checked && !of.docentes.includes(docenteId)) of.docentes.push(docenteId); if(!cb.checked) of.docentes=of.docentes.filter(id=>id!==docenteId); render(); });
+
+  <div class="offer-list">
+    ${state.oferta.map((oferta,i)=>`
+      <div class="offer-card">
+        <div class="bar">
+          <div>
+            <h3>${oferta.codigo||"Sem código"} — ${oferta.nome||"Disciplina sem nome"}</h3>
+            <div class="small">${oferta.periodo||"Sem período"} • ${oferta.tipo||"obrigatoria"}</div>
+          </div>
+          <button data-del-oferta="${i}">Excluir disciplina</button>
+        </div>
+
+        <div class="grid">
+          <div><label>Período</label><input data-oferta="${i}" data-f="periodo" value="${oferta.periodo||""}"></div>
+          <div><label>Tipo</label><select data-oferta="${i}" data-f="tipo">
+            <option value="obrigatoria" ${oferta.tipo==="obrigatoria"?"selected":""}>Obrigatória</option>
+            <option value="optativa" ${oferta.tipo==="optativa"?"selected":""}>Optativa</option>
+            <option value="especial" ${oferta.tipo==="especial"?"selected":""}>Especial</option>
+          </select></div>
+          <div><label>Especial</label><select data-oferta="${i}" data-f="especial">
+            <option value="nao" ${oferta.especial==="nao"?"selected":""}>Não</option>
+            <option value="individual" ${oferta.especial==="individual"?"selected":""}>Individual (50%)</option>
+            <option value="turma" ${oferta.especial==="turma"?"selected":""}>Turma especial (100%)</option>
+          </select></div>
+          <div><label>Código</label><input data-oferta="${i}" data-f="codigo" value="${oferta.codigo||""}"></div>
+          <div class="span-2"><label>Disciplina</label><input data-oferta="${i}" data-f="nome" value="${oferta.nome||""}"></div>
+          <div><label>CH Teórica</label><input type="number" min="0" data-oferta="${i}" data-f="teorica" value="${oferta.teorica||0}"></div>
+          <div><label>CH Prática</label><input type="number" min="0" data-oferta="${i}" data-f="pratica" value="${oferta.pratica||0}"></div>
+          <div><label>CH Orientação</label><input type="number" min="0" data-oferta="${i}" data-f="orientacao" value="${oferta.orientacao||0}"></div>
+          <div><label>Blocos/semana</label><div class="readonly-box">${calcBlocosNecessarios(oferta)}</div></div>
+        </div>
+
+        <div class="faculty-area">
+          <label><strong>Docentes do componente</strong></label>
+          ${renderChoiceWrap(i, oferta.docentes||[])}
+        </div>
+
+        ${Number(oferta.pratica||0)>0 && !isUCE(oferta) ? `
+        <div class="service-practice-box">
+          <div class="bar">
+            <div>
+              <h4>Organização da prática</h4>
+              <div class="small">Use esta opção quando a turma for dividida em grupos/módulos e cada docente cumprir integralmente a CH prática com seu grupo.</div>
+            </div>
+            <label class="toggle-line"><input type="checkbox" data-pratica-servico="${i}" ${oferta.praticaServico?"checked":""}> Prática em serviço/grupos</label>
+          </div>
+
+          ${oferta.praticaServico ? `
+            <div class="grid compact-grid">
+              <div>
+                <label>Quantidade de módulos/grupos</label>
+                <input type="number" min="1" data-qtd-modulos="${i}" value="${oferta.qtdModulosPraticos || Math.max((oferta.docentes||[]).length,1)}">
+              </div>
+              <div class="calc-note">
+                CH prática de cada módulo: <strong>${oferta.pratica||0}h</strong> no semestre =
+                <strong>${weeklyHours(oferta.pratica||0,15).toFixed(2)}h/semana</strong>
+              </div>
+            </div>
+
+            <div class="modules-table-wrap">
+              <table>
+                <thead><tr><th>Módulo</th><th>Grupo</th><th>Docente responsável</th><th>Local (opcional)</th><th>CH prática</th></tr></thead>
+                <tbody>
+                  ${(oferta.modulosPraticos||[]).map((m,mi)=>`
+                    <tr>
+                      <td><input data-modulo="${i}" data-mi="${mi}" data-mf="nome" value="${m.nome||`Módulo prático ${mi+1}`}"></td>
+                      <td><input data-modulo="${i}" data-mi="${mi}" data-mf="grupo" value="${m.grupo||`Grupo ${mi+1}`}"></td>
+                      <td>
+                        <select data-modulo="${i}" data-mi="${mi}" data-mf="docenteId">
+                          <option value="">Selecione</option>
+                          ${(oferta.docentes||[]).map(id=>`<option value="${id}" ${m.docenteId===id?"selected":""}>${docenteNome(id)}</option>`).join("")}
+                        </select>
+                      </td>
+                      <td><input data-modulo="${i}" data-mi="${mi}" data-mf="local" value="${m.local||""}" placeholder="Serviço/campo"></td>
+                      <td><strong>${oferta.pratica||0}h</strong></td>
+                    </tr>`).join("")}
+                </tbody>
+              </table>
+            </div>
+          `:""}
+        </div>`:""}
+      </div>
+    `).join("")}
+  </div>`;
+
+  panel.querySelector("#btn-add-disciplina-catalogo").onclick=()=>{
+    const codigo=panel.querySelector("#sel-disciplina-catalogo").value;
+    if(!codigo) return;
+    addOfertaFromCatalogo(codigo); syncOfertaEstrutura(); render();
+  };
+  panel.querySelector("#btn-add-periodo-catalogo").onclick=()=>{
+    const p=panel.querySelector("#sel-periodo-catalogo").value;
+    if(!p) return;
+    addPeriodoFromCatalogo(p); syncOfertaEstrutura(); render();
+  };
+  panel.querySelector("#add-oferta-manual").onclick=()=>{
+    state.oferta.push({
+      id:uid(),periodo:"",codigo:"",nome:"",teorica:0,pratica:0,orientacao:0,total:0,
+      tipo:"obrigatoria",especial:"nao",docentes:[],
+      praticaServico:false,qtdModulosPraticos:0,modulosPraticos:[]
+    });
+    render();
+  };
+
+  panel.querySelectorAll("[data-oferta]").forEach(el=>el.onchange=()=>{
+    const of=state.oferta[Number(el.dataset.oferta)];
+    of[el.dataset.f]=el.type==="number"?Number(el.value):el.value;
+    of.total=Number(of.teorica||0)+Number(of.pratica||0)+Number(of.orientacao||0);
+    if(Number(of.pratica||0)===0){ of.praticaServico=false; of.qtdModulosPraticos=0; of.modulosPraticos=[]; }
+    render();
+  });
+
+  panel.querySelectorAll("[data-oferta-doc]").forEach(el=>el.onchange=()=>{
+    const idx=Number(el.dataset.ofertaDoc);
+    const of=state.oferta[idx];
+    const id=el.dataset.docId;
+    of.docentes=of.docentes||[];
+    if(el.checked && !of.docentes.includes(id)) of.docentes.push(id);
+    if(!el.checked) of.docentes=of.docentes.filter(x=>x!==id);
+    if(of.praticaServico){
+      if(!of.qtdModulosPraticos || of.qtdModulosPraticos===0) of.qtdModulosPraticos=of.docentes.length;
+      ajustarModulosPraticos(of);
+    }
+    render();
+  });
+
+  panel.querySelectorAll("[data-pratica-servico]").forEach(el=>el.onchange=()=>{
+    const of=state.oferta[Number(el.dataset.praticaServico)];
+    of.praticaServico=el.checked;
+    if(el.checked && (!of.qtdModulosPraticos || of.qtdModulosPraticos===0)){
+      of.qtdModulosPraticos=Math.max((of.docentes||[]).length,1);
+    }
+    ajustarModulosPraticos(of);
+    render();
+  });
+
+  panel.querySelectorAll("[data-qtd-modulos]").forEach(el=>el.onchange=()=>{
+    const of=state.oferta[Number(el.dataset.qtdModulos)];
+    of.qtdModulosPraticos=Math.max(1,Number(el.value||1));
+    ajustarModulosPraticos(of);
+    render();
+  });
+
+  panel.querySelectorAll("[data-modulo]").forEach(el=>el.onchange=()=>{
+    const oi=Number(el.dataset.modulo), mi=Number(el.dataset.mi);
+    const of=state.oferta[oi], m=of.modulosPraticos[mi];
+    m[el.dataset.mf]=el.value;
+    render();
+  });
+
+  panel.querySelectorAll("[data-del-oferta]").forEach(btn=>btn.onclick=()=>{
+    const idx=Number(btn.dataset.delOferta);
+    const of=state.oferta[idx];
+    if(!confirm(`Excluir "${of?.nome||"esta disciplina"}" da oferta de ${state.semestreAtivo}?`)) return;
+    const id=of.id;
+    state.oferta.splice(idx,1);
+    state.horarios=(state.horarios||[]).filter(h=>h.ofertaId!==id);
+    render();
+  });
 }
 function renderAtividades(){
   const panel=document.getElementById("panel-atividades");
-  panel.innerHTML=`<div class="bar"><h2>Atividades</h2></div>
-  <div class="help">Orientação PIBIC removida. Regras mantidas: UCE = 1h de sala; NDE coordenação = 8h; NDE membro = 2h; Comitê de Ética = 8h; coordenação PIBIC = 8h por quantidade; monitoria = 4h; TCC = 2h por aluno; mestrado = 3h por orientando.</div>
-  <div class="grid">
-    ${state.docentes.map(docente=>{ const a=state.atividades[docente.id]; return `<div class="doc-card"><h3>${docente.nome||"(sem nome)"}</h3><div class="grid">
-      <div><label>Pesquisa institucionalizada</label><input type="number" min="0" data-atividade="${docente.id}" data-f="pesquisaInstitucionalizadaQtd" value="${a.pesquisaInstitucionalizadaQtd||0}" /></div>
-      <div><label>Coordenação PIBIC</label><input type="number" min="0" data-atividade="${docente.id}" data-f="coordProjetoPibicQtd" value="${a.coordProjetoPibicQtd||0}" /></div>
-      <div><label>Monitoria</label><input type="number" min="0" data-atividade="${docente.id}" data-f="monitoriaQtd" value="${a.monitoriaQtd||0}" /></div>
-      <div><label>Extensão coordenação</label><input type="number" min="0" data-atividade="${docente.id}" data-f="extensaoCoordenacaoQtd" value="${a.extensaoCoordenacaoQtd||0}" /></div>
-      <div><label>Extensão membro</label><input type="number" min="0" data-atividade="${docente.id}" data-f="extensaoMembroQtd" value="${a.extensaoMembroQtd||0}" /></div>
-      <div><label>NDE</label><select data-atividade="${docente.id}" data-f="nde"><option value="none" ${a.nde==="none"?"selected":""}>Não</option><option value="membro" ${a.nde==="membro"?"selected":""}>Membro</option><option value="coordenacao" ${a.nde==="coordenacao"?"selected":""}>Coordenação</option></select></div>
-      <label><input type="checkbox" data-atividade="${docente.id}" data-f="grupoPesquisaMembro" ${a.grupoPesquisaMembro?"checked":""} /> Grupo de pesquisa membro</label>
-      <label><input type="checkbox" data-atividade="${docente.id}" data-f="grupoPesquisaLider" ${a.grupoPesquisaLider?"checked":""} /> Grupo de pesquisa líder</label>
-      <label><input type="checkbox" data-atividade="${docente.id}" data-f="fiel" ${a.fiel?"checked":""} /> FIEL</label>
-      <label><input type="checkbox" data-atividade="${docente.id}" data-f="fieb" ${a.fieb?"checked":""} /> FIEB</label>
-      <label><input type="checkbox" data-atividade="${docente.id}" data-f="comiteEtica" ${a.comiteEtica?"checked":""} /> Comitê de Ética</label>
-      <div><label>Orientações TCC</label><input type="number" min="0" data-atividade="${docente.id}" data-f="orientacoesTcc" value="${a.orientacoesTcc||0}" /></div>
-      <div><label>Orientações Mestrado</label><input type="number" min="0" data-atividade="${docente.id}" data-f="orientacoesMestrado" value="${a.orientacoesMestrado||0}" /></div>
+  if(!state.atividadeDocenteId || !state.docentes.some(d=>d.id===state.atividadeDocenteId)){
+    state.atividadeDocenteId=state.docentes[0]?.id||"";
+  }
+  const docente=state.docentes.find(d=>d.id===state.atividadeDocenteId);
+  if(!docente){ panel.innerHTML=`<div class="small">Nenhum docente cadastrado.</div>`; return; }
+  const a=state.atividades[docente.id] || atividadePadrao();
+  state.atividades[docente.id]=a;
+  const calc=calcAtividadesDocente(docente.id);
+  const tccDigitado=Number(a.orientacoesTcc||0);
+  const tccAviso=tccDigitado>4 ? `<div class="activity-warning">A regra atual limita TCC a 4 orientandos. O cálculo considerará no máximo 8h.</div>`:"";
+
+  const cardNum=(titulo,campo,valor,regra,ch,descricaoCampo,placeholder,max="")=>`
+    <div class="activity-card">
+      <h3>${titulo}</h3>
+      <div class="rule">${regra}</div>
+      <div class="activity-calc">
+        <div><label>Quantidade</label><input type="number" min="0" ${max?`max="${max}"`:""} data-atividade="${docente.id}" data-f="${campo}" value="${valor||0}"></div>
+        <div class="ch-preview"><span>CH calculada</span><strong>${ch}h</strong></div>
+      </div>
+      ${descricaoCampo?`<div><label>Descrição / nomes dos projetos, ações ou orientandos</label><textarea data-atividade-texto="${docente.id}" data-f="${descricaoCampo}" placeholder="${placeholder||""}">${a[descricaoCampo]||""}</textarea></div>`:""}
+    </div>`;
+
+  panel.innerHTML=`
+    <div class="bar">
+      <div>
+        <h2>Atividades do docente</h2>
+        <div class="small">Semestre ${state.semestreAtivo}. Informe os dados-base; o sistema calcula a CH automaticamente.</div>
+      </div>
+      <div style="min-width:280px">
+        <select id="sel-atividade-docente">
+          ${state.docentes.map(d=>`<option value="${d.id}" ${d.id===docente.id?"selected":""}>${d.nome}</option>`).join("")}
+        </select>
+      </div>
     </div>
-    <div style="margin-top:1rem"><div class="bar"><h4>Outras comissões</h4><button data-add-comissao="${docente.id}">Adicionar</button></div>
-      ${(a.outrasComissoes||[]).map((item,idx)=>`<div class="comissao-item"><div><label>Nome</label><input data-comissao-docente="${docente.id}" data-comissao-idx="${idx}" data-kind="nome" value="${item.nome||""}" /></div><div><label>CH</label><input type="number" min="0" data-comissao-docente="${docente.id}" data-comissao-idx="${idx}" data-kind="ch" value="${item.ch||0}" /></div><div><button data-del-comissao="${docente.id}" data-comissao-idx="${idx}">Remover</button></div></div>`).join("")}
-    </div></div>`}).join("")}
-  </div>`;
-  panel.querySelectorAll("[data-atividade]").forEach(el=>el.onchange=()=>{ const a=state.atividades[el.dataset.atividade]; a[el.dataset.f]=el.type==="checkbox"?el.checked:(el.tagName==="SELECT"?el.value:Number(el.value)); render(); });
-  panel.querySelectorAll("[data-add-comissao]").forEach(btn=>btn.onclick=()=>{ state.atividades[btn.dataset.addComissao].outrasComissoes.push({nome:"",ch:0}); render(); });
-  panel.querySelectorAll("[data-comissao-docente]").forEach(el=>el.onchange=()=>{ const docenteId=el.dataset.comissaoDocente, idx=Number(el.dataset.comissaoIdx); state.atividades[docenteId].outrasComissoes[idx][el.dataset.kind]=el.type==="number"?Number(el.value):el.value; render(); });
-  panel.querySelectorAll("[data-del-comissao]").forEach(btn=>btn.onclick=()=>{ const docenteId=btn.dataset.delComissao, idx=Number(btn.dataset.comissaoIdx); state.atividades[docenteId].outrasComissoes.splice(idx,1); render(); });
+
+    <div class="activity-status">
+      <div>
+        <strong>${docente.nome}</strong>
+        <span class="small"> — situação do preenchimento:</span>
+      </div>
+      <select id="status-preenchimento">
+        <option value="rascunho" ${a.preenchimentoStatus==="rascunho"?"selected":""}>Rascunho</option>
+        <option value="enviado" ${a.preenchimentoStatus==="enviado"?"selected":""}>Enviado pelo docente</option>
+        <option value="validado" ${a.preenchimentoStatus==="validado"?"selected":""}>Validado pela coordenação</option>
+        <option value="ajuste" ${a.preenchimentoStatus==="ajuste"?"selected":""}>Necessita ajuste</option>
+      </select>
+    </div>
+
+    <div class="section-title"><h3>Pesquisa e inovação</h3></div>
+    <div class="activity-grid">
+      ${cardNum("Pesquisa institucionalizada","pesquisaInstitucionalizadaQtd",a.pesquisaInstitucionalizadaQtd,"4h por pesquisa institucionalizada",calc.pesquisaInstitucionalizada,"pesquisaDescricao","Ex.: título do projeto / cadastro institucional")}
+      ${cardNum("Coordenação de projeto PIBIC","coordProjetoPibicQtd",a.coordProjetoPibicQtd,"8h por projeto coordenado",calc.coordProjetoPibic,"pibicDescricao","Ex.: título do projeto PIBIC")}
+      <div class="activity-card">
+        <h3>Grupo de pesquisa</h3>
+        <div class="rule">Membro = 1h | Líder = 2h</div>
+        <div class="check-stack">
+          <label><input type="checkbox" data-atividade="${docente.id}" data-f="grupoPesquisaMembro" ${a.grupoPesquisaMembro?"checked":""}> Membro</label>
+          <label><input type="checkbox" data-atividade="${docente.id}" data-f="grupoPesquisaLider" ${a.grupoPesquisaLider?"checked":""}> Líder</label>
+        </div>
+        <div class="ch-preview inline"><span>CH calculada</span><strong>${calc.grupoPesquisa}h</strong></div>
+        <label>Nome do grupo</label>
+        <input data-atividade-texto="${docente.id}" data-f="grupoPesquisaNome" value="${a.grupoPesquisaNome||""}" placeholder="Nome do grupo de pesquisa">
+      </div>
+    </div>
+
+    <div class="section-title"><h3>Ensino complementar e orientações</h3></div>
+    <div class="activity-grid">
+      ${cardNum("Monitoria","monitoriaQtd",a.monitoriaQtd,"4h por monitoria",calc.monitoria,"monitoriaDescricao","Disciplina/projeto de monitoria")}
+      ${cardNum("Orientação de TCC","orientacoesTcc",a.orientacoesTcc,"2h por orientando, máximo de 4 orientandos",calc.orientTcc,"tccDescricao","Um orientando/trabalho por linha","4")}
+      ${tccAviso}
+      ${cardNum("Orientação de Mestrado","orientacoesMestrado",a.orientacoesMestrado,"3h por orientando",calc.orientMestrado,"mestradoDescricao","Nome(s) do(s) orientando(s)")}
+    </div>
+
+    <div class="section-title"><h3>Extensão</h3></div>
+    <div class="activity-grid">
+      ${cardNum("Coordenação de extensão","extensaoCoordenacaoQtd",a.extensaoCoordenacaoQtd,"8h por ação/projeto coordenado",Number(a.extensaoCoordenacaoQtd||0)*8,"extensaoCoordDescricao","Nome das ações/projetos coordenados")}
+      ${cardNum("Membro de extensão","extensaoMembroQtd",a.extensaoMembroQtd,"4h por ação/projeto como membro",Number(a.extensaoMembroQtd||0)*4,"extensaoMembroDescricao","Nome das ações/projetos em que atua como membro")}
+    </div>
+
+    <div class="section-title"><h3>NDE, comissões e atividades institucionais</h3></div>
+    <div class="activity-grid">
+      <div class="activity-card">
+        <h3>NDE</h3>
+        <div class="rule">Membro = 2h | Coordenação = 8h</div>
+        <select data-atividade="${docente.id}" data-f="nde">
+          <option value="none" ${a.nde==="none"?"selected":""}>Não participa</option>
+          <option value="membro" ${a.nde==="membro"?"selected":""}>Membro</option>
+          <option value="coordenacao" ${a.nde==="coordenacao"?"selected":""}>Coordenação</option>
+        </select>
+        <div class="ch-preview inline"><span>CH calculada</span><strong>${calc.nde}h</strong></div>
+      </div>
+
+      <div class="activity-card">
+        <h3>Outras atividades padronizadas</h3>
+        <div class="check-stack">
+          <label><input type="checkbox" data-atividade="${docente.id}" data-f="fiel" ${a.fiel?"checked":""}> FIEL — 2h</label>
+          <label><input type="checkbox" data-atividade="${docente.id}" data-f="fieb" ${a.fieb?"checked":""}> FIEB — 2h</label>
+          <label><input type="checkbox" data-atividade="${docente.id}" data-f="comiteEtica" ${a.comiteEtica?"checked":""}> Comitê de Ética — 8h</label>
+        </div>
+        <div class="ch-preview inline"><span>CH calculada</span><strong>${calc.fiel+calc.fieb+calc.comiteEtica}h</strong></div>
+      </div>
+
+      <div class="activity-card span-wide">
+        <div class="bar">
+          <div><h3>Outras comissões</h3><div class="rule">Use quando a CH não for padronizada. Informe nome, CH e portaria quando houver.</div></div>
+          <button data-add-comissao="${docente.id}">Adicionar comissão</button>
+        </div>
+        ${(a.outrasComissoes||[]).length ? (a.outrasComissoes||[]).map((item,idx)=>`
+          <div class="commission-row">
+            <div><label>Comissão</label><input data-comissao-docente="${docente.id}" data-comissao-idx="${idx}" data-kind="nome" value="${item.nome||""}"></div>
+            <div><label>CH</label><input type="number" min="0" data-comissao-docente="${docente.id}" data-comissao-idx="${idx}" data-kind="ch" value="${item.ch||0}"></div>
+            <div><label>Portaria</label><input data-comissao-docente="${docente.id}" data-comissao-idx="${idx}" data-kind="portaria" value="${item.portaria||""}" placeholder="Nº/ano"></div>
+            <div class="commission-action"><button data-del-comissao="${docente.id}" data-comissao-idx="${idx}">Remover</button></div>
+          </div>`).join("") : `<div class="empty-state">Nenhuma comissão adicional cadastrada.</div>`}
+        <div class="ch-preview inline"><span>Total de outras comissões</span><strong>${calc.outrasComissoes}h</strong></div>
+      </div>
+    </div>
+
+    <div class="activity-total">
+      <span>Total das atividades cadastradas nesta aba</span>
+      <strong>${roundInt(calc.monitoria+calc.pesquisaInstitucionalizada+calc.coordProjetoPibic+calc.grupoPesquisa+calc.extensao+calc.orientTcc+calc.orientMestrado+calc.comissoes)}h</strong>
+    </div>
+
+    <div class="help" style="margin-top:1rem">
+      As portarias detalhadas permanecem na Ficha do Docente. No relatório, o sistema combinará atividades, descrições, CH e portarias do semestre.
+    </div>`;
+
+  panel.querySelector("#sel-atividade-docente").onchange=e=>{ state.atividadeDocenteId=e.target.value; render(); };
+  panel.querySelector("#status-preenchimento").onchange=e=>{ a.preenchimentoStatus=e.target.value; render(); };
+
+  panel.querySelectorAll("[data-atividade]").forEach(el=>el.onchange=()=>{
+    const at=state.atividades[el.dataset.atividade];
+    let valor=el.type==="checkbox"?el.checked:(el.tagName==="SELECT"?el.value:Number(el.value));
+    if(el.dataset.f==="orientacoesTcc" && Number(valor)>4){
+      alert("A regra cadastrada permite no máximo 4 orientandos de TCC (8h). O valor será ajustado para 4.");
+      valor=4;
+    }
+    at[el.dataset.f]=valor;
+    render();
+  });
+
+  panel.querySelectorAll("[data-atividade-texto]").forEach(el=>el.onchange=()=>{
+    state.atividades[el.dataset.atividadeTexto][el.dataset.f]=el.value;
+    render();
+  });
+
+  panel.querySelectorAll("[data-add-comissao]").forEach(btn=>btn.onclick=()=>{
+    state.atividades[btn.dataset.addComissao].outrasComissoes.push({nome:"",ch:0,portaria:""});
+    render();
+  });
+
+  panel.querySelectorAll("[data-comissao-docente]").forEach(el=>el.onchange=()=>{
+    const docenteId=el.dataset.comissaoDocente, idx=Number(el.dataset.comissaoIdx);
+    const item=state.atividades[docenteId].outrasComissoes[idx];
+    item[el.dataset.kind]=el.type==="number"?Number(el.value):el.value;
+    render();
+  });
+
+  panel.querySelectorAll("[data-del-comissao]").forEach(btn=>btn.onclick=()=>{
+    const docenteId=btn.dataset.delComissao, idx=Number(btn.dataset.comissaoIdx);
+    if(!confirm("Remover esta comissão?")) return;
+    state.atividades[docenteId].outrasComissoes.splice(idx,1);
+    render();
+  });
 }
 function renderResumo(){
   const panel=document.getElementById("panel-resumo");
@@ -416,27 +1289,127 @@ function renderResumo(){
   panel.querySelector("#sel-resumo-docente").onchange=e=>{ state.resumoDocenteId=e.target.value; render(); };
 }
 function renderHorarios(){
+  state.horarios=(state.horarios||[]).filter(h=>{
+    const of=state.oferta.find(o=>o.id===h.ofertaId);
+    return of && !isEspecialIndividual(of);
+  });
   const panel=document.getElementById("panel-horarios"), conflicts=detectConflicts();
   panel.innerHTML=`<div class="bar"><h2>Horários por blocos de 50 minutos</h2></div>
-  <div class="help">Escolha a disciplina na oferta. O sistema puxa automaticamente período e docentes. Uma disciplina pode acontecer em mais de um dia da semana, em blocos consecutivos.</div>
+  <div class="help">Escolha a disciplina na oferta. O sistema puxa automaticamente período e docentes. Agora você pode editar horários já lançados sem excluir e também duplicar uma linha para facilitar a montagem.</div>
   <div class="card" style="margin-bottom:.8rem"><div class="grid">
-    <div><label>Disciplina da oferta</label><select id="hor-oferta"><option value="">Selecione</option>${state.oferta.map(of=>`<option value="${of.id}">${of.periodo} — ${of.codigo} — ${of.nome}</option>`).join("")}</select></div>
+    <div><label>Disciplina da oferta</label><select id="hor-oferta"><option value="">Selecione</option>${state.oferta.filter(of=>!isEspecialIndividual(of)).map(of=>`<option value="${of.id}">${of.periodo} — ${of.codigo} — ${of.nome}</option>`).join("")}</select></div>
     <div><label>Dia</label><select id="hor-dia">${dias.map(d=>`<option value="${d}">${d}</option>`).join("")}</select></div>
     <div><label>Turno</label><select id="hor-turno">${Object.keys(blocosPorTurno).map(t=>`<option value="${t}">${t}</option>`).join("")}</select></div>
     <div><label>Bloco inicial</label><select id="hor-bloco">${blocosPorTurno["Manhã"].map(item=>`<option value="${item.numero}">${item.numero}</option>`).join("")}</select></div>
     <div><label>Qtd. blocos</label><input id="hor-qtd" type="number" min="1" max="6" value="1" /></div>
     <div><button id="btn-add-horario">Adicionar horário</button></div>
   </div></div>
-  <div class="card"><table><thead><tr><th>Disciplina</th><th>Período</th><th>Docentes</th><th>Dia</th><th>Turno</th><th>Bloco inicial</th><th>Qtd.</th><th>Faixas</th><th>Status</th><th></th></tr></thead><tbody>
-  ${state.horarios.map(linha=>{ const of=state.oferta.find(o=>o.id===linha.ofertaId); const docentes=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); const slots=(blocosPorTurno[linha.turno]||[]).slice(Number(linha.blocoInicial)-1, Number(linha.blocoInicial)-1+Number(linha.qtdBlocos)).map(b=>b.faixa).join("<br>"); const c=conflicts[linha.id]||{docente:false,periodo:false}; let badge=`<span class="badge ok">OK</span>`; if(c.docente&&c.periodo) badge=`<span class="badge bad">Docente + Período</span>`; else if(c.docente) badge=`<span class="badge bad">Docente</span>`; else if(c.periodo) badge=`<span class="badge warn">Período</span>`; return `<tr><td>${of?.nome||""}</td><td>${of?.periodo||""}</td><td>${docentes}</td><td>${linha.dia}</td><td>${linha.turno}</td><td>${linha.blocoInicial}</td><td>${linha.qtdBlocos}</td><td>${slots}</td><td>${badge}</td><td><button data-del-horario="${linha.id}">Excluir</button></td></tr>`; }).join("")}
+  <div class="card"><table><thead><tr><th>Disciplina</th><th>Período</th><th>Docentes</th><th>Dia</th><th>Turno</th><th>Bloco inicial</th><th>Qtd.</th><th>Faixas</th><th>Status</th><th>Ações</th></tr></thead><tbody>
+  ${state.horarios.map(linha=>{ 
+    const of=state.oferta.find(o=>o.id===linha.ofertaId); 
+    const docentes=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); 
+    const slots=(blocosPorTurno[linha.turno]||[]).slice(Number(linha.blocoInicial)-1, Number(linha.blocoInicial)-1+Number(linha.qtdBlocos)).map(b=>b.faixa).join("<br>"); 
+    const c=conflicts[linha.id]||{docente:false,periodo:false}; 
+    let badge=`<span class="badge ok">OK</span>`; 
+    if(c.docente&&c.periodo) badge=`<span class="badge bad">Docente + Período</span>`; 
+    else if(c.docente) badge=`<span class="badge bad">Docente</span>`; 
+    else if(c.periodo) badge=`<span class="badge warn">Período</span>`; 
+    return `<tr>
+      <td>
+        <select data-edit-oferta="${linha.id}">
+          ${state.oferta.filter(item=>!isEspecialIndividual(item)).map(item=>`<option value="${item.id}" ${item.id===linha.ofertaId?"selected":""}>${item.periodo} — ${item.codigo} — ${item.nome}</option>`).join("")}
+        </select>
+      </td>
+      <td>${of?.periodo||""}</td>
+      <td>${docentes}</td>
+      <td><select data-edit-dia="${linha.id}">${dias.map(d=>`<option value="${d}" ${linha.dia===d?"selected":""}>${d}</option>`).join("")}</select></td>
+      <td><select data-edit-turno="${linha.id}">${Object.keys(blocosPorTurno).map(t=>`<option value="${t}" ${linha.turno===t?"selected":""}>${t}</option>`).join("")}</select></td>
+      <td><select data-edit-bloco="${linha.id}">${(blocosPorTurno[linha.turno]||[]).map(item=>`<option value="${item.numero}" ${Number(linha.blocoInicial)===Number(item.numero)?"selected":""}>${item.numero}</option>`).join("")}</select></td>
+      <td><input type="number" min="1" max="6" value="${linha.qtdBlocos}" data-edit-qtd="${linha.id}" /></td>
+      <td>${slots}</td>
+      <td>${badge}</td>
+      <td class="actions-cell">
+        <button data-save-horario="${linha.id}">Salvar</button>
+        <button data-dup-horario="${linha.id}">Duplicar</button>
+        <button data-del-horario="${linha.id}">Excluir</button>
+      </td>
+    </tr>`; 
+  }).join("")}
   </tbody></table></div>`;
-  panel.querySelector("#hor-turno").onchange=e=>{ panel.querySelector("#hor-bloco").innerHTML=(blocosPorTurno[e.target.value]||[]).map(item=>`<option value="${item.numero}">${item.numero}</option>`).join(""); };
-  panel.querySelector("#btn-add-horario").onclick=()=>{ const ofertaId=panel.querySelector("#hor-oferta").value; if(!ofertaId) return; const dia=panel.querySelector("#hor-dia").value; const turno=panel.querySelector("#hor-turno").value; const blocoInicial=Number(panel.querySelector("#hor-bloco").value); const qtdBlocos=Number(panel.querySelector("#hor-qtd").value); const max=(blocosPorTurno[turno]||[]).length; if(blocoInicial+qtdBlocos-1>max){ alert("A quantidade de blocos ultrapassa o limite do turno."); return; } state.horarios.push({id:uid(),ofertaId,dia,turno,blocoInicial,qtdBlocos}); render(); };
-  panel.querySelectorAll("[data-del-horario]").forEach(btn=>btn.onclick=()=>{ state.horarios=state.horarios.filter(h=>h.id!==btn.dataset.delHorario); render(); });
+
+  panel.querySelector("#hor-turno").onchange=e=>{
+    panel.querySelector("#hor-bloco").innerHTML=(blocosPorTurno[e.target.value]||[]).map(item=>`<option value="${item.numero}">${item.numero}</option>`).join("");
+  };
+
+  panel.querySelector("#btn-add-horario").onclick=()=>{
+    const ofertaId=panel.querySelector("#hor-oferta").value; 
+    if(!ofertaId) return; 
+    const dia=panel.querySelector("#hor-dia").value; 
+    const turno=panel.querySelector("#hor-turno").value; 
+    const blocoInicial=Number(panel.querySelector("#hor-bloco").value); 
+    const qtdBlocos=Number(panel.querySelector("#hor-qtd").value);
+    if(!Number.isFinite(qtdBlocos) || qtdBlocos<1){ alert("Informe uma quantidade válida de blocos."); return; }
+    const max=(blocosPorTurno[turno]||[]).length; 
+    if(blocoInicial+qtdBlocos-1>max){ 
+      alert("A quantidade de blocos ultrapassa o limite do turno."); 
+      return; 
+    } 
+    state.horarios.push({id:uid(),ofertaId,dia,turno,blocoInicial,qtdBlocos}); 
+    render(); 
+  };
+
+  panel.querySelectorAll("[data-edit-turno]").forEach(sel=>{
+    sel.onchange=()=>{
+      const id=sel.dataset.editTurno;
+      const blocoSel=panel.querySelector(`[data-edit-bloco="${id}"]`);
+      blocoSel.innerHTML=(blocosPorTurno[sel.value]||[]).map(item=>`<option value="${item.numero}">${item.numero}</option>`).join("");
+    };
+  });
+
+  panel.querySelectorAll("[data-save-horario]").forEach(btn=>btn.onclick=()=>{
+    const id=btn.dataset.saveHorario;
+    const item=state.horarios.find(h=>h.id===id);
+    if(!item) return;
+    const ofertaId=panel.querySelector(`[data-edit-oferta="${id}"]`).value;
+    const dia=panel.querySelector(`[data-edit-dia="${id}"]`).value;
+    const turno=panel.querySelector(`[data-edit-turno="${id}"]`).value;
+    const blocoInicial=Number(panel.querySelector(`[data-edit-bloco="${id}"]`).value);
+    const qtdBlocos=Number(panel.querySelector(`[data-edit-qtd="${id}"]`).value);
+    if(!ofertaId){ alert("Selecione uma disciplina válida."); return; }
+    if(!Number.isFinite(qtdBlocos) || qtdBlocos<1){ alert("Informe uma quantidade válida de blocos."); return; }
+    const max=(blocosPorTurno[turno]||[]).length;
+    if(blocoInicial+qtdBlocos-1>max){
+      alert("A quantidade de blocos ultrapassa o limite do turno.");
+      return;
+    }
+    item.ofertaId=ofertaId;
+    item.dia=dia;
+    item.turno=turno;
+    item.blocoInicial=blocoInicial;
+    item.qtdBlocos=qtdBlocos;
+    render();
+  });
+
+  panel.querySelectorAll("[data-dup-horario]").forEach(btn=>btn.onclick=()=>{
+    const id=btn.dataset.dupHorario;
+    const item=state.horarios.find(h=>h.id===id);
+    if(!item) return;
+    state.horarios.push({...item, id:uid()});
+    render();
+  });
+
+  panel.querySelectorAll("[data-del-horario]").forEach(btn=>btn.onclick=()=>{
+    const item=state.horarios.find(h=>h.id===btn.dataset.delHorario);
+    const of=state.oferta.find(o=>o.id===item?.ofertaId);
+    if(!confirm(`Excluir este horário${of?.nome?` de "${of.nome}"`:""}?`)) return;
+    state.horarios=state.horarios.filter(h=>h.id!==btn.dataset.delHorario); 
+    render(); 
+  });
 }
+
 function renderGrade(){
   const panel=document.getElementById("panel-grade");
-  const filtered=state.horarios.filter(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); if(!of) return false; if(state.gradeFilters.view==="turma") return !state.gradeFilters.turma || of.periodo===state.gradeFilters.turma; return !state.gradeFilters.docente || (of.docentes||[]).includes(state.gradeFilters.docente); });
+  const filtered=state.horarios.filter(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); if(!of || isEspecialIndividual(of)) return false; if(state.gradeFilters.view==="turma") return !state.gradeFilters.turma || of.periodo===state.gradeFilters.turma; return !state.gradeFilters.docente || (of.docentes||[]).includes(state.gradeFilters.docente); });
   panel.innerHTML=`<div class="bar"><h2>Grade semanal</h2><div class="filters"><div><label>Visualizar por</label><select id="grade-view"><option value="turma" ${state.gradeFilters.view==="turma"?"selected":""}>Turma</option><option value="docente" ${state.gradeFilters.view==="docente"?"selected":""}>Docente</option></select></div><div id="grade-wrap-turma" style="display:${state.gradeFilters.view==="turma"?"block":"none"}"><label>Turma</label><select id="grade-turma"><option value="">Todas</option>${[...new Set(state.oferta.map(o=>o.periodo).filter(Boolean))].map(periodo=>`<option value="${periodo}" ${state.gradeFilters.turma===periodo?"selected":""}>${periodo}</option>`).join("")}</select></div><div id="grade-wrap-docente" style="display:${state.gradeFilters.view==="docente"?"block":"none"}"><label>Docente</label><select id="grade-docente"><option value="">Todos</option>${state.docentes.map(doc=>`<option value="${doc.id}" ${state.gradeFilters.docente===doc.id?"selected":""}>${doc.nome||"(sem nome)"}</option>`).join("")}</select></div></div></div>
   <div class="card"><table class="grade-table"><thead><tr><th>Turno / Bloco</th>${dias.map(d=>`<th>${d}</th>`).join("")}</tr></thead><tbody>
   ${Object.entries(blocosPorTurno).map(([turno,blocos])=>blocos.map(bloco=>`<tr><th>${turno} • ${bloco.numero}<br><span class="small">${bloco.faixa}</span></th>${dias.map(dia=>{ const hits=filtered.filter(h=>{ if(h.dia!==dia||h.turno!==turno) return false; const ini=Number(h.blocoInicial), fim=ini+Number(h.qtdBlocos)-1; return bloco.numero>=ini && bloco.numero<=fim; }); return `<td class="grade-cell">${hits.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return `<div class="slot-card"><div class="slot-title">${of?.nome||""}</div><div class="slot-sub">${of?.periodo||""}</div><div class="slot-sub">${docs}</div></div>`; }).join("")}</td>`; }).join("")}</tr>`).join("")).join("")}
@@ -446,6 +1419,10 @@ function renderGrade(){
   panel.querySelector("#grade-docente").onchange=e=>{ state.gradeFilters.docente=e.target.value; render(); };
 }
 function gerarPdfTabela(title, head, body, filename){
+  if(!window.jspdf?.jsPDF){
+    alert("O gerador de PDF não foi carregado. Verifique sua conexão com a internet e tente novamente.");
+    return;
+  }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:"landscape"});
   doc.setFontSize(13); doc.text("UNIVERSIDADE DO ESTADO DO RIO GRANDE DO NORTE",14,14);
@@ -457,40 +1434,179 @@ function gerarPdfTabela(title, head, body, filename){
 function renderRelatorios(){
   const panel=document.getElementById("panel-relatorios");
   if(!state.relDocenteId && state.docentes[0]?.id) state.relDocenteId=state.docentes[0].id;
+
   const resumos=state.docentes.map(doc=>({id:doc.id,nome:doc.nome,...calcResumoDocente(doc)}));
   const resumoDocente=resumos.find(r=>r.id===state.relDocenteId);
   const periodos=[...new Set(state.oferta.map(o=>o.periodo).filter(Boolean))];
   if(!state.relPeriodo && periodos[0]) state.relPeriodo=periodos[0];
-  const horariosPeriodo=state.horarios.filter(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); return of && of.periodo===state.relPeriodo; });
+
+  const horariosPeriodo=state.horarios.filter(h=>{
+    const of=state.oferta.find(o=>o.id===h.ofertaId);
+    return of && of.periodo===state.relPeriodo;
+  });
+
   const detalhamentoDocente=resumoDocente ? detalhamentoDisciplinas(state.relDocenteId) : [];
-  const atividadesDetalhadas=resumoDocente ? buildResumoDetalhadoTexto(state.relDocenteId) : [];
-  panel.innerHTML=`<div class="bar"><h2>Relatórios</h2></div>
-  <div class="card" style="margin-bottom:.8rem"><div class="bar"><h3>Quadro resumo por docente</h3><div class="inline-actions"><select id="rel-docente">${state.docentes.map(doc=>`<option value="${doc.id}" ${doc.id===state.relDocenteId?"selected":""}>${doc.nome||"(sem nome)"}</option>`).join("")}</select><button id="csv-docente">CSV</button><button id="pdf-docente">PDF</button></div></div>
-  ${resumoDocente?`<table><thead><tr><th>Docente</th><th>Sala</th><th>Regência</th><th>Monitoria</th><th>Pesquisa</th><th>Coord. PIBIC</th><th>Extensão</th><th>Orient. TCC</th><th>Orient. Mestrado</th><th>Comissões</th><th>Total</th></tr></thead><tbody><tr><td>${resumoDocente.nome}</td><td>${resumoDocente.sala}</td><td>${resumoDocente.regencia}</td><td>${resumoDocente.monitoria}</td><td>${resumoDocente.pesquisaInstitucionalizada+resumoDocente.grupoPesquisa}</td><td>${resumoDocente.coordProjetoPibic}</td><td>${resumoDocente.extensao}</td><td>${resumoDocente.orientTcc}</td><td>${resumoDocente.orientMestrado}</td><td>${resumoDocente.comissoes}</td><td>${resumoDocente.total}</td></tr></tbody></table>
-  <div class="card" style="margin-top:.8rem"><div class="bar"><h4>Disciplinas do docente</h4></div><table><thead><tr><th>Período</th><th>Código</th><th>Disciplina</th><th>CH sala</th><th>CH regência</th></tr></thead><tbody>${detalhamentoDocente.map(item=>`<tr><td>${item.periodo}</td><td>${item.codigo}</td><td>${item.disciplina}</td><td>${item.sala}</td><td>${item.regencia}</td></tr>`).join("")}</tbody></table></div>
-  <div class="card" style="margin-top:.8rem"><div class="bar"><h4>Detalhamento das atividades</h4></div><ul class="detail-list">${atividadesDetalhadas.map(l=>`<li>${l}</li>`).join("")}</ul></div>`:""}</div>
-  <div class="card" style="margin-bottom:.8rem"><div class="bar"><h3>Quadro resumo de todos os docentes</h3><div class="inline-actions"><button id="csv-todos">CSV</button><button id="pdf-todos">PDF</button></div></div>
-  <table><thead><tr><th>Docente</th><th>Sala</th><th>Regência</th><th>Monitoria</th><th>Pesquisa</th><th>Coord. PIBIC</th><th>Extensão</th><th>Orientações</th><th>Comissões</th><th>Total</th></tr></thead><tbody>${resumos.map(r=>`<tr><td>${r.nome}</td><td>${r.sala}</td><td>${r.regencia}</td><td>${r.monitoria}</td><td>${r.pesquisaInstitucionalizada+r.grupoPesquisa}</td><td>${r.coordProjetoPibic}</td><td>${r.extensao}</td><td>${r.orientTcc+r.orientMestrado}</td><td>${r.comissoes}</td><td>${r.total}</td></tr>`).join("")}</tbody></table></div>
-  <div class="card"><div class="bar"><h3>Quadro de horários por período</h3><div class="inline-actions"><select id="rel-periodo">${periodos.map(p=>`<option value="${p}" ${p===state.relPeriodo?"selected":""}>${p}</option>`).join("")}</select><button id="csv-horarios">CSV</button><button id="pdf-horarios">PDF</button></div></div>
-  <table><thead><tr><th>Disciplina</th><th>Dia</th><th>Turno</th><th>Bloco inicial</th><th>Qtd.</th><th>Docentes</th></tr></thead><tbody>${horariosPeriodo.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return `<tr><td>${of?.nome||""}</td><td>${h.dia}</td><td>${h.turno}</td><td>${h.blocoInicial}</td><td>${h.qtdBlocos}</td><td>${docs}</td></tr>`; }).join("")}</tbody></table></div>`;
+  const memoria=memoriaCalculoEnsino();
+  const memoriaFiltrada=state.relDocenteId?memoria.filter(m=>m.docente===docenteNome(state.relDocenteId)):memoria;
+
+  panel.innerHTML=`<div class="bar"><h2>Relatórios — ${state.semestreAtivo}</h2></div>
+
+  <div class="card" style="margin-bottom:.8rem">
+    <div class="bar">
+      <div>
+        <h3>Memória numérica da carga de ensino</h3>
+        <div class="small">Este quadro evidencia a diferença entre teoria compartilhada e prática individualizada por módulo/grupo.</div>
+      </div>
+      <div class="inline-actions">
+        <button id="csv-memoria">CSV</button>
+        <button id="pdf-memoria">PDF</button>
+      </div>
+    </div>
+    <div class="report-note">
+      <strong>Regra:</strong> CH teórica semanal = CH teórica ÷ 15 semanas ÷ nº de docentes.
+      Nas práticas em serviço, cada módulo corresponde à CH prática integral do componente para o docente responsável.
+      Regência = 100% da teoria semanal + 50% da prática semanal.
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th>Per.</th><th>Disciplina</th><th>Docente</th><th>CH T</th><th>CH P</th><th>Nº docentes</th>
+          <th>T/docente sem.</th><th>P/docente sem.</th><th>Módulo/grupo</th><th>CH ensino</th><th>Regência</th>
+        </tr></thead>
+        <tbody>
+          ${memoria.map(m=>`<tr>
+            <td>${m.periodo||""}</td>
+            <td>${m.codigo||""} — ${m.disciplina||""}</td>
+            <td>${m.docente||""}</td>
+            <td>${m.chT}</td><td>${m.chP}</td><td>${m.nDoc}</td>
+            <td>${Number(m.teoriaDoc).toFixed(2)}</td>
+            <td>${Number(m.praticaDoc).toFixed(2)}</td>
+            <td>${m.modulo}</td>
+            <td><strong>${m.sala}</strong></td>
+            <td><strong>${m.regencia}</strong></td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:.8rem">
+    <div class="bar"><h3>Resumo por docente</h3>
+      <div class="inline-actions">
+        <select id="rel-docente">${state.docentes.map(doc=>`<option value="${doc.id}" ${doc.id===state.relDocenteId?"selected":""}>${doc.nome||"(sem nome)"}</option>`).join("")}</select>
+        <button id="csv-docente">CSV</button>
+        <button id="pdf-docente">PDF</button>
+      </div>
+    </div>
+    ${resumoDocente?`
+      <table><thead><tr><th>Docente</th><th>Sala</th><th>Regência</th><th>Função</th><th>Monitoria</th><th>Pesquisa</th><th>Coord. PIBIC</th><th>Extensão</th><th>Orient. TCC</th><th>Orient. Mestrado</th><th>Comissões</th><th>Total</th></tr></thead>
+      <tbody><tr><td>${resumoDocente.nome}</td><td>${resumoDocente.sala}</td><td>${resumoDocente.regencia}</td><td>${Number(state.docentes.find(d=>d.id===resumoDocente.id)?.chFuncao||0)}</td><td>${resumoDocente.monitoria}</td><td>${resumoDocente.pesquisaInstitucionalizada+resumoDocente.grupoPesquisa}</td><td>${resumoDocente.coordProjetoPibic}</td><td>${resumoDocente.extensao}</td><td>${resumoDocente.orientTcc}</td><td>${resumoDocente.orientMestrado}</td><td>${resumoDocente.comissoes}</td><td>${resumoDocente.total}</td></tr></tbody></table>
+
+      <div class="card" style="margin-top:.8rem"><div class="bar"><h4>Disciplinas do docente</h4></div>
+      <table><thead><tr><th>Período</th><th>Código</th><th>Disciplina</th><th>CH sala</th><th>CH regência</th></tr></thead>
+      <tbody>${detalhamentoDocente.map(item=>`<tr><td>${item.periodo}</td><td>${item.codigo}</td><td>${item.disciplina}</td><td>${item.sala}</td><td>${item.regencia}</td></tr>`).join("")}</tbody></table></div>
+    `:""}
+  </div>
+
+  <div class="card" style="margin-bottom:.8rem">
+    <div class="bar"><h3>Quadro resumo de todos os docentes</h3>
+      <div class="inline-actions"><button id="csv-todos">CSV</button><button id="pdf-todos">PDF</button></div>
+    </div>
+    <table><thead><tr><th>Docente</th><th>Sala</th><th>Regência</th><th>Função</th><th>Monitoria</th><th>Pesquisa</th><th>Coord. PIBIC</th><th>Extensão</th><th>Orientações</th><th>Comissões</th><th>Total</th></tr></thead>
+    <tbody>${resumos.map(r=>`<tr><td>${r.nome}</td><td>${r.sala}</td><td>${r.regencia}</td><td>${Number(state.docentes.find(d=>d.id===r.id)?.chFuncao||0)}</td><td>${r.monitoria}</td><td>${r.pesquisaInstitucionalizada+r.grupoPesquisa}</td><td>${r.coordProjetoPibic}</td><td>${r.extensao}</td><td>${r.orientTcc+r.orientMestrado}</td><td>${r.comissoes}</td><td>${r.total}</td></tr>`).join("")}</tbody></table>
+  </div>
+
+  <div class="card" style="margin-bottom:.8rem">
+    <div class="bar"><h3>Somente sala de aula</h3>
+      <div class="inline-actions"><button id="csv-sala">CSV</button><button id="pdf-sala">PDF</button></div>
+    </div>
+    <table><thead><tr><th>Docente</th><th>CH sala de aula</th><th>Mínimo previsto</th><th>Situação</th></tr></thead>
+    <tbody>${resumos.map(r=>{ const d=state.docentes.find(x=>x.id===r.id); const minimo=Number(d?.minimoSala||0); return `<tr><td>${r.nome}</td><td><strong>${r.sala}</strong></td><td>${minimo}</td><td>${r.sala>=minimo?"Atende":"Abaixo do mínimo"}</td></tr>`; }).join("")}</tbody></table>
+  </div>
+
+  <div class="card">
+    <div class="bar"><h3>Quadro de horários por período</h3>
+      <div class="inline-actions"><select id="rel-periodo">${periodos.map(p=>`<option value="${p}" ${p===state.relPeriodo?"selected":""}>${p}</option>`).join("")}</select><button id="csv-horarios">CSV</button><button id="pdf-horarios">PDF</button></div>
+    </div>
+    <table><thead><tr><th>Disciplina</th><th>Dia</th><th>Turno</th><th>Bloco inicial</th><th>Qtd.</th><th>Docentes</th></tr></thead>
+    <tbody>${horariosPeriodo.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return `<tr><td>${of?.nome||""}</td><td>${h.dia}</td><td>${h.turno}</td><td>${h.blocoInicial}</td><td>${h.qtdBlocos}</td><td>${docs}</td></tr>`; }).join("")}</tbody></table>
+  </div>`;
+
   panel.querySelector("#rel-docente").onchange=e=>{ state.relDocenteId=e.target.value; render(); };
   panel.querySelector("#rel-periodo").onchange=e=>{ state.relPeriodo=e.target.value; render(); };
-  panel.querySelector("#csv-docente").onclick=()=>{ if(!resumoDocente) return; downloadCsv("relatorio_docente.csv",[["Docente","Sala","Regência","Monitoria","Pesquisa","Coord. PIBIC","Extensão","Orient. TCC","Orient. Mestrado","Comissões","Total"],[resumoDocente.nome,resumoDocente.sala,resumoDocente.regencia,resumoDocente.monitoria,resumoDocente.pesquisaInstitucionalizada+resumoDocente.grupoPesquisa,resumoDocente.coordProjetoPibic,resumoDocente.extensao,resumoDocente.orientTcc,resumoDocente.orientMestrado,resumoDocente.comissoes,resumoDocente.total],[],["Período","Código","Disciplina","CH sala","CH regência"],...detalhamentoDocente.map(item=>[item.periodo,item.codigo,item.disciplina,item.sala,item.regencia]),[],["Detalhamento das atividades"],...atividadesDetalhadas.map(txt=>[txt])]); };
-  panel.querySelector("#pdf-docente").onclick=()=>{ if(!resumoDocente) return; gerarPdfTabela("Quadro resumo por docente",[["Docente","Sala","Regência","Monitoria","Pesquisa","Coord. PIBIC","Extensão","Orient. TCC","Orient. Mestrado","Comissões","Total"]],[[resumoDocente.nome,resumoDocente.sala,resumoDocente.regencia,resumoDocente.monitoria,resumoDocente.pesquisaInstitucionalizada+resumoDocente.grupoPesquisa,resumoDocente.coordProjetoPibic,resumoDocente.extensao,resumoDocente.orientTcc,resumoDocente.orientMestrado,resumoDocente.comissoes,resumoDocente.total]],"relatorio_docente.pdf"); };
-  panel.querySelector("#csv-todos").onclick=()=>{ downloadCsv("relatorio_todos_docentes.csv",[["Docente","Sala","Regência","Monitoria","Pesquisa","Coord. PIBIC","Extensão","Orientações","Comissões","Total"],...resumos.map(r=>[r.nome,r.sala,r.regencia,r.monitoria,r.pesquisaInstitucionalizada+r.grupoPesquisa,r.coordProjetoPibic,r.extensao,r.orientTcc+r.orientMestrado,r.comissoes,r.total])]); };
-  panel.querySelector("#pdf-todos").onclick=()=>{ gerarPdfTabela("Quadro resumo de todos os docentes",[["Docente","Sala","Regência","Monitoria","Pesquisa","Coord. PIBIC","Extensão","Orientações","Comissões","Total"]],resumos.map(r=>[r.nome,r.sala,r.regencia,r.monitoria,r.pesquisaInstitucionalizada+r.grupoPesquisa,r.coordProjetoPibic,r.extensao,r.orientTcc+r.orientMestrado,r.comissoes,r.total]),"relatorio_todos_docentes.pdf"); };
+
+  panel.querySelector("#csv-memoria").onclick=()=>{
+    downloadCsv(`memoria_calculo_ensino_${state.semestreAtivo}.csv`,[
+      ["Período","Código","Disciplina","Docente","CH Teórica","CH Prática","Nº docentes","Teoria/docente semanal","Prática/docente semanal","Módulo/grupo","CH ensino","Regência"],
+      ...memoria.map(m=>[m.periodo,m.codigo,m.disciplina,m.docente,m.chT,m.chP,m.nDoc,Number(m.teoriaDoc).toFixed(2),Number(m.praticaDoc).toFixed(2),m.modulo,m.sala,m.regencia])
+    ]);
+  };
+  panel.querySelector("#pdf-memoria").onclick=()=>{
+    gerarPdfTabela(
+      `Memória de cálculo da carga de ensino - ${state.semestreAtivo}`,
+      [["Per.","Disciplina","Docente","CH T","CH P","Nº doc.","T/doc.","P/doc.","Módulo/grupo","Ensino","Regência"]],
+      memoria.map(m=>[m.periodo,`${m.codigo} ${m.disciplina}`,m.docente,m.chT,m.chP,m.nDoc,Number(m.teoriaDoc).toFixed(2),Number(m.praticaDoc).toFixed(2),m.modulo,m.sala,m.regencia]),
+      `memoria_calculo_ensino_${state.semestreAtivo}.pdf`
+    );
+  };
+
+  panel.querySelector("#csv-docente").onclick=()=>{ if(!resumoDocente) return; downloadCsv("relatorio_docente.csv",[["Docente","Sala","Regência","Função","Monitoria","Pesquisa","Coord. PIBIC","Extensão","Orient. TCC","Orient. Mestrado","Comissões","Total"],[resumoDocente.nome,resumoDocente.sala,resumoDocente.regencia,Number(state.docentes.find(d=>d.id===resumoDocente.id)?.chFuncao||0),resumoDocente.monitoria,resumoDocente.pesquisaInstitucionalizada+resumoDocente.grupoPesquisa,resumoDocente.coordProjetoPibic,resumoDocente.extensao,resumoDocente.orientTcc,resumoDocente.orientMestrado,resumoDocente.comissoes,resumoDocente.total]]); };
+  panel.querySelector("#pdf-docente").onclick=()=>{ if(!resumoDocente) return; gerarPdfTabela("Quadro resumo por docente",[["Docente","Sala","Regência","Função","Monitoria","Pesquisa","Coord. PIBIC","Extensão","Orient. TCC","Orient. Mestrado","Comissões","Total"]],[[resumoDocente.nome,resumoDocente.sala,resumoDocente.regencia,Number(state.docentes.find(d=>d.id===resumoDocente.id)?.chFuncao||0),resumoDocente.monitoria,resumoDocente.pesquisaInstitucionalizada+resumoDocente.grupoPesquisa,resumoDocente.coordProjetoPibic,resumoDocente.extensao,resumoDocente.orientTcc,resumoDocente.orientMestrado,resumoDocente.comissoes,resumoDocente.total]],"relatorio_docente.pdf"); };
+  panel.querySelector("#csv-todos").onclick=()=>{ downloadCsv("relatorio_todos_docentes.csv",[["Docente","Sala","Regência","Função","Monitoria","Pesquisa","Coord. PIBIC","Extensão","Orientações","Comissões","Total"],...resumos.map(r=>[r.nome,r.sala,r.regencia,Number(state.docentes.find(d=>d.id===r.id)?.chFuncao||0),r.monitoria,r.pesquisaInstitucionalizada+r.grupoPesquisa,r.coordProjetoPibic,r.extensao,r.orientTcc+r.orientMestrado,r.comissoes,r.total])]); };
+  panel.querySelector("#pdf-todos").onclick=()=>{ gerarPdfTabela("Quadro resumo de todos os docentes",[["Docente","Sala","Regência","Função","Monitoria","Pesquisa","Coord. PIBIC","Extensão","Orientações","Comissões","Total"]],resumos.map(r=>[r.nome,r.sala,r.regencia,Number(state.docentes.find(d=>d.id===r.id)?.chFuncao||0),r.monitoria,r.pesquisaInstitucionalizada+r.grupoPesquisa,r.coordProjetoPibic,r.extensao,r.orientTcc+r.orientMestrado,r.comissoes,r.total]),"relatorio_todos_docentes.pdf"); };
+  panel.querySelector("#csv-sala").onclick=()=>{
+    downloadCsv(`somente_sala_de_aula_${state.semestreAtivo}.csv`,[
+      ["Docente","CH sala de aula","Mínimo previsto","Situação"],
+      ...resumos.map(r=>{ const d=state.docentes.find(x=>x.id===r.id); const minimo=Number(d?.minimoSala||0); return [r.nome,r.sala,minimo,r.sala>=minimo?"Atende":"Abaixo do mínimo"]; })
+    ]);
+  };
+  panel.querySelector("#pdf-sala").onclick=()=>{
+    gerarPdfTabela(
+      `Somente sala de aula - ${state.semestreAtivo}`,
+      [["Docente","CH sala de aula","Mínimo previsto","Situação"]],
+      resumos.map(r=>{ const d=state.docentes.find(x=>x.id===r.id); const minimo=Number(d?.minimoSala||0); return [r.nome,r.sala,minimo,r.sala>=minimo?"Atende":"Abaixo do mínimo"]; }),
+      `somente_sala_de_aula_${state.semestreAtivo}.pdf`
+    );
+  };
+
   panel.querySelector("#csv-horarios").onclick=()=>{ downloadCsv(`relatorio_horarios_${state.relPeriodo}.csv`,[["Disciplina","Dia","Turno","Bloco inicial","Qtd.","Docentes"],...horariosPeriodo.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return [of?.nome||"",h.dia,h.turno,h.blocoInicial,h.qtdBlocos,docs]; })]); };
   panel.querySelector("#pdf-horarios").onclick=()=>{ gerarPdfTabela(`Quadro de horários - ${state.relPeriodo}`,[["Disciplina","Dia","Turno","Bloco inicial","Qtd.","Docentes"]],horariosPeriodo.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return [of?.nome||"",h.dia,h.turno,h.blocoInicial,h.qtdBlocos,docs]; }),`relatorio_horarios_${state.relPeriodo}.pdf`); };
 }
 function render(){
-  syncAtividades(); renderTabs(); showPanel(state.activeTab);
+  syncAtividades();
+  syncOfertaEstrutura();
+  if(!state.fichaDocenteId && state.docentes[0]?.id) state.fichaDocenteId=state.docentes[0].id;
+  if(!state.atividadeDocenteId && state.docentes[0]?.id) state.atividadeDocenteId=state.docentes[0].id;
+  renderSemesterBar();
+  tabs.find(t=>t.key==="oferta").label = `Oferta ${state.semestreAtivo}`;
+  renderTabs(); showPanel(state.activeTab);
   renderDocentes(); renderOferta(); renderAtividades(); renderResumo(); renderHorarios(); renderGrade(); renderRelatorios();
   saveState();
 }
-document.getElementById("btnSeed").onclick=()=>{ seedData(); render(); };
-document.getElementById("btnExportJson").onclick=()=>downloadJson("dch_uern_dados.json", state);
-document.getElementById("inputImport").onchange=(e)=>{ const file=e.target.files?.[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ Object.assign(state, JSON.parse(reader.result)); syncAtividades(); render(); }; reader.readAsText(file); };
-document.getElementById("btnReset").onclick=()=>{ if(!confirm("Limpar tudo?")) return; localStorage.removeItem(STORAGE_KEY); seedData(); render(); };
+document.getElementById("btnSeed").onclick=()=>{ if(!confirm("Carregar exemplo reinicia os dados locais do sistema. Deseja continuar?")) return; seedData(); render(); };
+document.getElementById("btnExportJson").onclick=()=>{ sincronizarSemestreAtual(); downloadJson(`dch_uern_backup_${state.semestreAtivo.replace(".","_")}.json`, state); };
+document.getElementById("inputImport").onchange=(e)=>{ const file=e.target.files?.[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ 
+  try{
+    const imported=JSON.parse(reader.result);
+    Object.assign(state, imported);
+    if(!state.catalogo || !state.catalogo.length) state.catalogo=buildCatalogo();
+    if(!state.semestres || !Object.keys(state.semestres).length){
+      state.semestres={};
+      state.semestreAtivo=state.semestreAtivo||"2027.1";
+      state.semestres[state.semestreAtivo]={oferta:state.oferta||[],atividades:state.atividades||{},horarios:state.horarios||[]};
+    }
+    const dados=garantirSemestre(state.semestreAtivo||"2027.1",true);
+    state.oferta=dados.oferta||[]; state.atividades=dados.atividades||{}; state.horarios=dados.horarios||[];
+    syncAtividades(); render();
+    alert("Backup importado com sucesso.");
+  }catch(err){ alert("Não foi possível importar esse arquivo JSON."); }
+}; reader.readAsText(file); };
+document.getElementById("btnReset").onclick=()=>{ 
+  if(!confirm("ATENÇÃO: isso apagará os dados salvos neste navegador. Deseja realmente reiniciar o sistema?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  seedData();
+  render();
+};
 if(!loadState()) seedData();
 render();
 </script>
