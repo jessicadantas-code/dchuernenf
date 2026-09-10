@@ -105,8 +105,11 @@ const state = {
 
 function uid(){ return Math.random().toString(36).slice(2,10); }
 function roundInt(v){ return Math.round(Number(v||0)); }
-function weeklyHours(total,weeks=15){ return Number(total||0)/Number(weeks||15); }
-function blocksFromHours(total,weeks=15){ return roundInt(weeklyHours(total,weeks)); }
+const SEMANAS_SEMESTRE = 15;
+function weeklyHours(ch){
+  return Number(ch||0) / SEMANAS_SEMESTRE;
+}
+function blocksFromHours(total,weeks=15){ return roundInt(weeklyHours(total)); }
 function isUCE(of){ return (of.codigo||"").startsWith("UCE") || (of.nome||"").toUpperCase().includes("UCE"); }
 function isEspecialIndividual(of){ return of.tipo==="especial" && of.especial==="individual"; }
 function docenteNome(id){ return state.docentes.find(d=>d.id===id)?.nome || ""; }
@@ -278,6 +281,12 @@ function modulosDoDocente(of,docenteId){
   return (of.modulosPraticos||[]).filter(m=>m.docenteId===docenteId);
 }
 
+function auditarBaseSemanas(){
+  if(SEMANAS_SEMESTRE!==15){
+    console.error("ERRO: SEMANAS_SEMESTRE deve ser 15.");
+  }
+}
+
 function cloneData(obj){ return JSON.parse(JSON.stringify(obj)); }
 
 function periodosBasicosDoSemestre(semestre){
@@ -398,7 +407,7 @@ function renderSemesterBar(){
       <select id="semester-select">
         ${semestres.map(s=>`<option value="${s}" ${s===state.semestreAtivo?"selected":""}>${s}</option>`).join("")}
       </select>
-      <span class="semester-note">Obrigatórias carregadas automaticamente; optativas, UCEs e especiais entram conforme a oferta real.</span>
+      <span class="semester-note">Obrigatórias carregadas automaticamente; optativas, UCEs e especiais entram conforme a oferta real. <strong>Base de cálculo: 15 semanas.</strong></span>
     </div>
     <div class="semester-actions">
       <button id="btn-new-semester">Criar semestre</button>
@@ -591,8 +600,10 @@ function addPeriodoFromCatalogo(periodo){
     });
 }
 function calcBlocosNecessarios(of){
+  if(isEspecialIndividual(of)) return 0;
   if(isUCE(of)) return 1;
-  return blocksFromHours(of.total || (Number(of.teorica||0)+Number(of.pratica||0)+Number(of.orientacao||0)), 15);
+  const chTotal=Number(of.total||0) || (Number(of.teorica||0)+Number(of.pratica||0)+Number(of.orientacao||0));
+  return Math.round(chTotal / SEMANAS_SEMESTRE);
 }
 function calcDisciplinaParaDocente(of, docenteId){
   if(!(of.docentes||[]).includes(docenteId)) return {sala:0, regencia:0, teoricaSemanal:0, praticaSemanal:0, modulos:0};
@@ -600,7 +611,7 @@ function calcDisciplinaParaDocente(of, docenteId){
 
   const n=(of.docentes||[]).length || 1;
   const multiplicador=isEspecialIndividual(of) ? 0.5 : 1;
-  const teoricaSemanal=(weeklyHours(of.teorica,15)/n)*multiplicador;
+  const teoricaSemanal=(weeklyHours(of.teorica)/n)*multiplicador;
 
   let praticaSemanal=0;
   let modulos=0;
@@ -608,11 +619,11 @@ function calcDisciplinaParaDocente(of, docenteId){
   if(of.praticaServico){
     const mods=modulosDoDocente(of,docenteId);
     modulos=mods.length;
-    praticaSemanal=weeklyHours(of.pratica,15)*modulos*multiplicador;
+    praticaSemanal=weeklyHours(of.pratica)*modulos*multiplicador;
   }else{
     // Mantém a regra já validada nas versões anteriores:
     // a CH prática do componente é integral para cada docente participante.
-    praticaSemanal=weeklyHours(of.pratica,15)*multiplicador;
+    praticaSemanal=weeklyHours(of.pratica)*multiplicador;
   }
 
   return {
@@ -825,96 +836,183 @@ function gerarPdfRelatorioGeral(dados){
     alert("O gerador de PDF não foi carregado. Verifique sua conexão com a internet e tente novamente.");
     return;
   }
+
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a3"});
-  doc.setFontSize(14);
-  doc.text(`Relatório Geral de Carga Horária Docente — ${state.semestreAtivo}`,10,10);
-  doc.setFontSize(7.5);
-  doc.text("Relatório consolidado com disciplinas, cálculos, atividades e portarias.",10,15);
+  const totalGeral=dados.reduce((s,d)=>s+Number(d.total||0),0);
 
-  const head=[[
-    "Docente","Disciplinas / cálculo","Ens.","Reg.","Função/Portaria","CH",
-    "Pesquisa","PIBIC","Extensão","Monit.","TCC","Mest.","Grupo",
-    "NDE","FIEL/FIEB","CEP","Comissões","Portarias","Total CH"
+  function tituloPagina(subtitulo){
+    doc.setFontSize(14);
+    doc.text(`Relatório Geral de Carga Horária Docente — ${state.semestreAtivo}`,10,10);
+    doc.setFontSize(8);
+    doc.text(subtitulo,10,15);
+  }
+
+  // QUADRO 1 — RESUMO NUMÉRICO
+  tituloPagina("Quadro 1 — Resumo numérico da carga horária por docente");
+
+  const headResumo=[[
+    "Docente","Ens.","Reg.","Função","Pesq.","PIBIC","Ext.","Mon.","TCC","Mest.",
+    "Grupo","NDE","FIEL/FIEB","CEP","Comiss.","Total CH"
   ]];
 
-  const body=dados.map(d=>[
-    d.nome,
-    d.disciplinas,
-    d.chEnsino,
-    d.regencia,
-    d.funcao,
-    d.chFuncao,
-    d.pesquisa?`${d.pesquisa} (${d.chPesquisa}h)`:(d.chPesquisa||""),
-    d.pibic?`${d.pibic} (${d.chPibic}h)`:(d.chPibic||""),
-    d.extensao?`${d.extensao} (${d.chExtensao}h)`:(d.chExtensao||""),
-    d.monitoria?`${d.monitoria} (${d.chMonitoria}h)`:(d.chMonitoria||""),
-    d.tcc?`${d.tcc} (${d.chTcc}h)`:(d.chTcc||""),
-    d.mestrado?`${d.mestrado} (${d.chMestrado}h)`:(d.chMestrado||""),
-    d.grupo?`${d.grupo} (${d.chGrupo}h)`:(d.chGrupo||""),
-    d.nde?`${d.nde} (${d.chNde}h)`:(d.chNde||""),
-    d.fielFieb?`${d.fielFieb} (${d.chFielFieb}h)`:(d.chFielFieb||""),
-    d.comiteEtica?`${d.comiteEtica} (${d.chComiteEtica}h)`:(d.chComiteEtica||""),
-    d.comissoes?`${d.comissoes} (${d.chComissoes}h)`:(d.chComissoes||""),
-    d.portarias,
-    d.total
+  const bodyResumo=dados.map(d=>[
+    d.nome,d.chEnsino,d.regencia,d.chFuncao,d.chPesquisa,d.chPibic,d.chExtensao,
+    d.chMonitoria,d.chTcc,d.chMestrado,d.chGrupo,d.chNde,d.chFielFieb,
+    d.chComiteEtica,d.chComissoes,d.total
   ]);
 
-  const totalGeral=dados.reduce((s,d)=>s+Number(d.total||0),0);
-  body.push([
-    "TOTAL GERAL","","","","","","","","","","","","","","","","","",totalGeral
+  bodyResumo.push([
+    "TOTAL GERAL","","","","","","","","","","","","","","",totalGeral
   ]);
 
   doc.autoTable({
-    head,
-    body,
+    head:headResumo,
+    body:bodyResumo,
     startY:19,
     theme:"grid",
     tableWidth:"auto",
-    styles:{
-      fontSize:4.7,
-      cellPadding:.7,
-      overflow:"linebreak",
-      valign:"top",
-      minCellHeight:4.5
-    },
-    headStyles:{
-      fontSize:4.9,
-      halign:"center",
-      valign:"middle",
-      minCellHeight:7
-    },
+    styles:{fontSize:7.2,cellPadding:1.25,valign:"middle"},
+    headStyles:{fontSize:7,halign:"center",valign:"middle",minCellHeight:9},
     columnStyles:{
-      0:{cellWidth:22},
-      1:{cellWidth:54},
-      2:{cellWidth:7,halign:"center"},
-      3:{cellWidth:7,halign:"center"},
-      4:{cellWidth:29},
-      5:{cellWidth:7,halign:"center"},
-      6:{cellWidth:24},
-      7:{cellWidth:22},
-      8:{cellWidth:24},
-      9:{cellWidth:18},
-      10:{cellWidth:21},
-      11:{cellWidth:20},
-      12:{cellWidth:18},
-      13:{cellWidth:22},
-      14:{cellWidth:19},
-      15:{cellWidth:19},
-      16:{cellWidth:24},
-      17:{cellWidth:38},
-      18:{cellWidth:10,halign:"center",fontStyle:"bold"}
+      0:{cellWidth:42,halign:"left"},
+      1:{cellWidth:12,halign:"center"},2:{cellWidth:12,halign:"center"},
+      3:{cellWidth:12,halign:"center"},4:{cellWidth:12,halign:"center"},
+      5:{cellWidth:12,halign:"center"},6:{cellWidth:12,halign:"center"},
+      7:{cellWidth:12,halign:"center"},8:{cellWidth:12,halign:"center"},
+      9:{cellWidth:12,halign:"center"},10:{cellWidth:12,halign:"center"},
+      11:{cellWidth:12,halign:"center"},12:{cellWidth:16,halign:"center"},
+      13:{cellWidth:12,halign:"center"},14:{cellWidth:14,halign:"center"},
+      15:{cellWidth:16,halign:"center",fontStyle:"bold"}
     },
-    margin:{left:5,right:5,top:5,bottom:5},
+    margin:{left:10,right:10,top:5,bottom:8},
     didParseCell:function(data){
-      if(data.row.index===body.length-1){
-        data.cell.styles.fontStyle="bold";
-      }
-      if([2,3,5,18].includes(data.column.index)){
-        data.cell.styles.halign="center";
-      }
+      if(data.row.index===bodyResumo.length-1) data.cell.styles.fontStyle="bold";
+      if(data.column.index===15) data.cell.styles.fontStyle="bold";
     }
   });
+
+  // QUADRO 2 — ENSINO / DISCIPLINAS
+  doc.addPage("a3","landscape");
+  tituloPagina("Quadro 2 — Disciplinas, teoria, prática, módulos e regência");
+
+  const ensinoRows=[];
+  dados.forEach(d=>{
+    const docObj=state.docentes.find(x=>x.nome===d.nome);
+    if(!docObj) return;
+    const comps=state.oferta.filter(of=>(of.docentes||[]).includes(docObj.id));
+
+    if(!comps.length){
+      ensinoRows.push([d.nome,"—","","","","","",""]);
+      return;
+    }
+
+    comps.forEach(of=>{
+      const c=calcDisciplinaParaDocente(of,docObj.id);
+      const mods=modulosDoDocente(of,docObj.id);
+      ensinoRows.push([
+        d.nome,
+        `${of.codigo||""} — ${of.nome||""}`,
+        Number(of.teorica||0),
+        Number(of.pratica||0),
+        isUCE(of) ? "UCE" : (of.praticaServico ? (mods.map(m=>m.nome||m.grupo||"Módulo").join("; ")||"Sem módulo") : (Number(of.pratica||0)>0?"Prática integral":"—")),
+        isUCE(of) ? "—" : Number(c.teoricaSemanal||0).toFixed(2),
+        isUCE(of) ? "1.00" : Number(c.praticaSemanal||0).toFixed(2),
+        `${c.sala} / ${c.regencia}`
+      ]);
+    });
+  });
+
+  doc.autoTable({
+    head:[["Docente","Disciplina","CH T","CH P","Módulo/Grupo","T/doc. sem.","P/doc. sem.","Ensino / Reg."]],
+    body:ensinoRows,
+    startY:19,
+    theme:"grid",
+    styles:{fontSize:6.3,cellPadding:1.1,valign:"top",overflow:"linebreak"},
+    headStyles:{fontSize:6.5,halign:"center",valign:"middle"},
+    columnStyles:{
+      0:{cellWidth:40},
+      1:{cellWidth:88},
+      2:{cellWidth:15,halign:"center"},
+      3:{cellWidth:15,halign:"center"},
+      4:{cellWidth:72},
+      5:{cellWidth:22,halign:"center"},
+      6:{cellWidth:22,halign:"center"},
+      7:{cellWidth:28,halign:"center"}
+    },
+    margin:{left:10,right:10,top:5,bottom:8}
+  });
+
+  // QUADRO 3 — ATIVIDADES / PORTARIAS
+  doc.addPage("a3","landscape");
+  tituloPagina("Quadro 3 — Atividades, funções e portarias");
+
+  const atividadesRows=dados.map(d=>[
+    d.nome,
+    d.funcao||"—",
+    d.pesquisa ? `${d.pesquisa} (${d.chPesquisa}h)` : (d.chPesquisa?`${d.chPesquisa}h`:"—"),
+    d.pibic ? `${d.pibic} (${d.chPibic}h)` : (d.chPibic?`${d.chPibic}h`:"—"),
+    d.extensao ? `${d.extensao} (${d.chExtensao}h)` : (d.chExtensao?`${d.chExtensao}h`:"—"),
+    d.monitoria ? `${d.monitoria} (${d.chMonitoria}h)` : (d.chMonitoria?`${d.chMonitoria}h`:"—"),
+    d.tcc ? `${d.tcc} (${d.chTcc}h)` : (d.chTcc?`${d.chTcc}h`:"—"),
+    d.mestrado ? `${d.mestrado} (${d.chMestrado}h)` : (d.chMestrado?`${d.chMestrado}h`:"—"),
+    d.grupo ? `${d.grupo} (${d.chGrupo}h)` : (d.chGrupo?`${d.chGrupo}h`:"—"),
+    d.nde ? `${d.nde} (${d.chNde}h)` : (d.chNde?`${d.chNde}h`:"—"),
+    d.fielFieb ? `${d.fielFieb} (${d.chFielFieb}h)` : (d.chFielFieb?`${d.chFielFieb}h`:"—"),
+    d.comiteEtica ? `${d.comiteEtica} (${d.chComiteEtica}h)` : (d.chComiteEtica?`${d.chComiteEtica}h`:"—"),
+    d.comissoes ? `${d.comissoes} (${d.chComissoes}h)` : (d.chComissoes?`${d.chComissoes}h`:"—"),
+    d.portarias||"—",
+    d.total
+  ]);
+
+  doc.autoTable({
+    head:[[
+      "Docente","Função/Portaria","Pesquisa","PIBIC","Extensão","Monitoria","TCC",
+      "Mestrado","Grupo","NDE","FIEL/FIEB","CEP","Comissões","Portarias","Total CH"
+    ]],
+    body:atividadesRows,
+    startY:19,
+    theme:"grid",
+    styles:{fontSize:5.2,cellPadding:.85,valign:"top",overflow:"linebreak"},
+    headStyles:{fontSize:5.4,halign:"center",valign:"middle"},
+    columnStyles:{
+      0:{cellWidth:28},1:{cellWidth:40},2:{cellWidth:30},3:{cellWidth:28},
+      4:{cellWidth:30},5:{cellWidth:24},6:{cellWidth:28},7:{cellWidth:26},
+      8:{cellWidth:22},9:{cellWidth:26},10:{cellWidth:24},11:{cellWidth:22},
+      12:{cellWidth:28},13:{cellWidth:50},14:{cellWidth:12,halign:"center",fontStyle:"bold"}
+    },
+    margin:{left:8,right:8,top:5,bottom:8}
+  });
+
+  // QUADRO 4 — PORTARIAS EM DESTAQUE
+  const comPortaria=dados.filter(d=>d.portarias && d.portarias!=="—");
+  if(comPortaria.length){
+    doc.addPage("a3","landscape");
+    tituloPagina("Quadro 4 — Relação consolidada de portarias e atos administrativos");
+
+    doc.autoTable({
+      head:[["Docente","Função/Atividade","Portarias/Atos administrativos","Observações"]],
+      body:comPortaria.map(d=>[d.nome,d.funcao||"—",d.portarias||"—",d.observacoes||""]),
+      startY:19,
+      theme:"grid",
+      styles:{fontSize:7,cellPadding:1.3,valign:"top",overflow:"linebreak"},
+      headStyles:{fontSize:7,halign:"center"},
+      columnStyles:{
+        0:{cellWidth:45},
+        1:{cellWidth:85},
+        2:{cellWidth:160},
+        3:{cellWidth:80}
+      },
+      margin:{left:10,right:10,top:5,bottom:8}
+    });
+  }
+
+  const totalPaginas=doc.getNumberOfPages();
+  for(let i=1;i<=totalPaginas;i++){
+    doc.setPage(i);
+    doc.setFontSize(6.5);
+    doc.text(`Página ${i} de ${totalPaginas}`,390,287,{align:"right"});
+  }
 
   doc.save(`relatorio_geral_${state.semestreAtivo.replace(".","_")}.pdf`);
 }
@@ -1180,7 +1278,7 @@ function renderOferta(){
 
   panel.innerHTML=`<div class="bar"><h2>Oferta ${state.semestreAtivo}</h2></div>
   <div class="help">
-    As disciplinas obrigatórias da estrutura básica já vêm carregadas conforme o semestre .1 ou .2.
+    As disciplinas obrigatórias da estrutura básica já vêm carregadas conforme o semestre .1 ou .2. <strong>Todos os cálculos semanais usam obrigatoriamente 15 semanas.</strong>
     Optativas, UCEs e componentes especiais entram conforme a oferta real. Para disciplinas com prática em serviços,
     marque <strong>Prática em serviço/grupos</strong> e informe a quantidade de módulos práticos.
   </div>
@@ -1248,7 +1346,7 @@ function renderOferta(){
               </div>
               <div class="calc-note">
                 CH prática de cada módulo: <strong>${oferta.pratica||0}h</strong> no semestre =
-                <strong>${weeklyHours(oferta.pratica||0,15).toFixed(2)}h/semana</strong>
+                <strong>${weeklyHours(oferta.pratica||0).toFixed(2)}h/semana</strong>
               </div>
             </div>
 
@@ -1708,7 +1806,7 @@ function renderRelatorios(){
     <div class="bar">
       <div>
         <h3>Relatório Geral Institucional</h3>
-        <div class="small">Uma única visão com docentes, disciplinas, cálculos, atividades e portarias.</div>
+        <div class="small">Uma única visão em tela; o PDF geral é organizado em quadros para melhorar a leitura sem perder disciplinas, atividades e portarias.</div>
       </div>
       <div class="inline-actions">
         <button id="csv-geral">Baixar relatório geral (CSV)</button>
@@ -1897,6 +1995,7 @@ function renderRelatorios(){
   panel.querySelector("#pdf-horarios").onclick=()=>{ gerarPdfTabela(`Quadro de horários - ${state.relPeriodo}`,[["Disciplina","Dia","Turno","Bloco inicial","Qtd.","Docentes"]],horariosPeriodo.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return [of?.nome||"",h.dia,h.turno,h.blocoInicial,h.qtdBlocos,docs]; }),`relatorio_horarios_${state.relPeriodo}.pdf`); };
 }
 function render(){
+  auditarBaseSemanas();
   syncAtividades();
   syncOfertaEstrutura();
   if(!state.fichaDocenteId && state.docentes[0]?.id) state.fichaDocenteId=state.docentes[0].id;

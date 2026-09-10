@@ -88,3 +88,28 @@ O relatório geral pode ser baixado em CSV (para abrir no Excel) e PDF.
 - coluna Total CH foi fixada com largura pequena e destaque;
 - linha **TOTAL GERAL** adicionada ao final do relatório em tela, CSV e PDF;
 - PDF A3 reorganizado para manter Portarias e Total CH visíveis dentro da página.
+
+
+## Relatório Geral v8 — layout redesenhado
+O PDF geral permanece um único arquivo, mas agora é organizado em quadros para aumentar a legibilidade:
+
+1. Resumo numérico da carga horária por docente
+2. Disciplinas, teoria, prática, módulos e regência
+3. Atividades, funções e portarias
+4. Relação consolidada de portarias e atos administrativos, quando houver
+
+As colunas numéricas foram compactadas e o Total CH passou a ficar em destaque.
+
+
+## Correção v9 — semestre fixo em 15 semanas
+Foi corrigida a inconsistência em que alguns componentes podiam aparecer calculados sobre 10, 8 ou 6 semanas.
+
+A partir desta versão:
+- existe uma única constante de sistema: `SEMANAS_SEMESTRE = 15`;
+- toda conversão de CH total para CH semanal usa 15 semanas;
+- teoria, prática, módulos práticos, regência e blocos semanais usam a mesma base;
+- não é mais possível passar outra quantidade de semanas para a função de cálculo semanal;
+- a tela informa explicitamente que a base de cálculo é 15 semanas.
+
+Regra:
+`CH semanal = CH total ÷ 15`

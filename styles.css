@@ -326,3 +326,21 @@ input,select{width:100%;padding:.5rem .6rem;border:1px solid var(--border);borde
   background:#f3f5f8;
   border-top:2px solid var(--border);
 }
+
+.general-report-table th,
+.general-report-table td{font-size:.78rem}
+.general-report-table th:nth-child(3),
+.general-report-table td:nth-child(3),
+.general-report-table th:nth-child(4),
+.general-report-table td:nth-child(4),
+.general-report-table th:nth-child(6),
+.general-report-table td:nth-child(6),
+.general-report-table th:nth-child(19),
+.general-report-table td:nth-child(19){
+  min-width:46px !important;
+  width:46px !important;
+  max-width:54px !important;
+  text-align:center;
+}
+.general-report-table th:nth-child(19),
+.general-report-table td:nth-child(19){font-weight:700}
