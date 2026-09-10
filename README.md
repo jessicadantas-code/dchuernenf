@@ -113,3 +113,28 @@ A partir desta versão:
 
 Regra:
 `CH semanal = CH total ÷ 15`
+
+
+## v10 — armazenamento compartilhado via n8n
+
+Esta versão está conectada aos webhooks de produção:
+
+- Salvar: `https://jessicauern.app.n8n.cloud/webhook/dch-salvar`
+- Carregar: `https://jessicauern.app.n8n.cloud/webhook/dch-carregar`
+
+### Funcionamento
+- O GitHub Pages continua hospedando a interface.
+- O `localStorage` continua sendo backup local.
+- O botão **Salvar online** envia o estado completo do sistema ao n8n.
+- O botão **Carregar online** busca o semestre ativo no n8n.
+- O sistema tenta buscar o semestre online ao abrir, mas só substitui os dados locais se o conteúdo recebido tiver o formato válido do DCH.
+- O JSON de teste usado durante a configuração do n8n não sobrescreve os dados locais.
+- Alterações normais têm sincronização online com pequeno atraso para reduzir chamadas excessivas ao n8n.
+- Importação de JSON fica local até clicar em **Salvar online**.
+- “Limpar tudo” não apaga automaticamente a versão armazenada no n8n.
+
+### n8n
+Os dois workflows precisam estar **Published/Active** e usar as Production URLs acima.
+
+### Observação de acesso
+Nesta primeira fase não há login. Quem tiver acesso ao site poderá visualizar os dados carregados. A interface também contém funções de edição; controle de edição/autenticação poderá ser acrescentado posteriormente.

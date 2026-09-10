@@ -19,13 +19,20 @@
       </div>
     </div>
     <div class="topbar-actions">
-      <button id="btnSeed">Carregar exemplo</button>
+      <button id="btnSaveOnline" class="cloud-primary">Salvar online</button>
+      <button id="btnLoadOnline">Carregar online</button>
+      <span id="cloudStatus" class="cloud-status cloud-local">Somente local</span>
       <button id="btnExportJson">Exportar JSON</button>
       <label class="file-label">Importar JSON<input id="inputImport" type="file" accept=".json" hidden /></label>
+      <button id="btnSeed">Carregar exemplo</button>
       <button id="btnReset" class="danger">Limpar tudo</button>
     </div>
   </header>
 
+  <div class="online-notice">
+    <strong>Modo online:</strong> o navegador mantém uma cópia local de segurança e o n8n guarda a versão compartilhada.
+    Use <strong>Salvar online</strong> para publicar alterações imediatamente.
+  </div>
   <nav class="tabs" id="tabs"></nav>
 
   <main>
@@ -49,6 +56,13 @@ const LEGACY_STORAGE_KEYS = [
   "dch_uern_sprint13",
   "dch_uern_sprint12"
 ];
+
+const N8N_SAVE_URL = "https://jessicauern.app.n8n.cloud/webhook/dch-salvar";
+const N8N_LOAD_URL = "https://jessicauern.app.n8n.cloud/webhook/dch-carregar";
+const CLOUD_AUTOSAVE_DELAY = 1800;
+let cloudAutosaveTimer = null;
+let cloudSaveInProgress = false;
+let cloudLoadedOnce = false;
 
 const tabs = [
   { key: "docentes", label: "Docentes" },
@@ -367,7 +381,8 @@ function criarNovoSemestre(){
     };
   }
   carregarSemestre(semestre);
-  render();
+  render(false);
+  setCloudStatus(`Novo semestre ${semestre} • clique em Salvar online`,"pending");
 }
 
 function duplicarSemestreAtual(){
@@ -388,7 +403,8 @@ function duplicarSemestreAtual(){
   copia.oferta = (copia.oferta||[]).map(o=>({...o,id:uid()}));
   state.semestres[semestre] = copia;
   carregarSemestre(semestre);
-  render();
+  render(false);
+  setCloudStatus(`Semestre ${semestre} duplicado localmente • clique em Salvar online`,"pending");
 }
 
 function renderSemesterBar(){
@@ -413,7 +429,13 @@ function renderSemesterBar(){
       <button id="btn-new-semester">Criar semestre</button>
       <button id="btn-duplicate-semester">Duplicar semestre</button>
     </div>`;
-  bar.querySelector("#semester-select").onchange = e => { carregarSemestre(e.target.value); render(); };
+  bar.querySelector("#semester-select").onchange = async e => {
+    const destino=e.target.value;
+    carregarSemestre(destino);
+    render(false);
+    setCloudStatus(`Semestre ${destino} local • buscando online...`,"saving");
+    await carregarOnline(destino,{confirmar:false,silencioso:true});
+  };
   bar.querySelector("#btn-new-semester").onclick = criarNovoSemestre;
   bar.querySelector("#btn-duplicate-semester").onclick = duplicarSemestreAtual;
 }
@@ -578,6 +600,173 @@ function loadState(){
     return true;
   }catch(err){
     console.error("Erro ao carregar dados salvos:", err);
+    return false;
+  }
+}
+
+
+function setCloudStatus(texto,tipo="local"){
+  const el=document.getElementById("cloudStatus");
+  if(!el) return;
+  el.textContent=texto;
+  el.className=`cloud-status cloud-${tipo}`;
+}
+
+function estadoValidoParaImportar(obj){
+  return !!(
+    obj &&
+    typeof obj==="object" &&
+    Array.isArray(obj.docentes) &&
+    obj.semestres &&
+    typeof obj.semestres==="object"
+  );
+}
+
+function parsePossivelJson(valor){
+  let atual=valor;
+  for(let i=0;i<3;i++){
+    if(typeof atual!=="string") return atual;
+    try{ atual=JSON.parse(atual); }
+    catch(e){ return atual; }
+  }
+  return atual;
+}
+
+function aplicarEstadoRecebido(loaded, semestreSolicitado){
+  if(!estadoValidoParaImportar(loaded)) return false;
+
+  Object.assign(state,loaded);
+  if(!state.catalogo || !state.catalogo.length) state.catalogo=buildCatalogo();
+  if(!state.semestres || !Object.keys(state.semestres).length) return false;
+
+  const semestre =
+    state.semestres[semestreSolicitado] ? semestreSolicitado :
+    state.semestreAtivo && state.semestres[state.semestreAtivo] ? state.semestreAtivo :
+    Object.keys(state.semestres)[0];
+
+  state.semestreAtivo=semestre;
+  const dados=garantirSemestre(semestre,true);
+  state.oferta=dados.oferta||[];
+  state.atividades=dados.atividades||{};
+  state.horarios=dados.horarios||[];
+  syncAtividades();
+  syncOfertaEstrutura();
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+  return true;
+}
+
+async function salvarOnline(mostrarMensagem=false){
+  if(cloudSaveInProgress) return false;
+  cloudSaveInProgress=true;
+  clearTimeout(cloudAutosaveTimer);
+
+  try{
+    sincronizarSemestreAtual();
+    saveState();
+    setCloudStatus("Salvando...","saving");
+
+    const resposta=await fetch(N8N_SAVE_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        semestre:state.semestreAtivo,
+        dados_json:JSON.stringify(state),
+        atualizado_em:new Date().toISOString()
+      })
+    });
+
+    if(!resposta.ok){
+      throw new Error(`HTTP ${resposta.status}`);
+    }
+
+    // A resposta pode ser JSON ou texto, dependendo do node Respond to Webhook.
+    try{ await resposta.clone().json(); }catch(e){ try{ await resposta.text(); }catch(_){} }
+
+    const hora=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+    setCloudStatus(`Online • salvo ${hora}`,"ok");
+    if(mostrarMensagem) alert("Dados salvos online com sucesso.");
+    return true;
+  }catch(err){
+    console.error("Erro ao salvar no n8n:",err);
+    setCloudStatus("Falha online • dados locais preservados","error");
+    if(mostrarMensagem){
+      alert("Não foi possível salvar online. Seus dados continuam preservados neste navegador e podem ser exportados em JSON.");
+    }
+    return false;
+  }finally{
+    cloudSaveInProgress=false;
+  }
+}
+
+function agendarSalvamentoOnline(){
+  // Evita uma execução do n8n a cada clique/digitação.
+  clearTimeout(cloudAutosaveTimer);
+  setCloudStatus("Alterações locais • aguardando sincronização","pending");
+  cloudAutosaveTimer=setTimeout(()=>salvarOnline(false),CLOUD_AUTOSAVE_DELAY);
+}
+
+async function carregarOnline(semestre=state.semestreAtivo,{confirmar=true,silencioso=false}={}){
+  try{
+    if(confirmar){
+      const ok=confirm(
+        `Carregar os dados online de ${semestre}?\n\n`+
+        "Os dados locais atuais serão substituídos somente se o registro online for reconhecido como um backup válido do sistema."
+      );
+      if(!ok) return false;
+    }
+
+    setCloudStatus("Carregando online...","saving");
+    const url=`${N8N_LOAD_URL}?semestre=${encodeURIComponent(semestre)}`;
+    const resposta=await fetch(url,{method:"GET",cache:"no-store"});
+
+    if(!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+
+    let recebido;
+    const texto=await resposta.text();
+    if(!texto.trim()) throw new Error("Resposta vazia");
+    recebido=parsePossivelJson(texto);
+
+    // n8n pode devolver objeto, array com 1 linha ou objeto contendo dados_json.
+    let linha=Array.isArray(recebido)?recebido[0]:recebido;
+    linha=parsePossivelJson(linha);
+
+    let bruto;
+    if(linha && typeof linha==="object" && "dados_json" in linha){
+      bruto=linha.dados_json;
+    }else{
+      bruto=linha;
+    }
+
+    const loaded=parsePossivelJson(bruto);
+
+    if(!estadoValidoParaImportar(loaded)){
+      // Muito importante: não sobrescreve o navegador se o banco ainda tiver só o JSON de teste.
+      setCloudStatus("Online ainda sem dados válidos do sistema","pending");
+      if(!silencioso){
+        alert(
+          "O n8n respondeu, mas o registro online ainda não contém um backup completo do DCH. "+
+          "Se ele ainda tiver o registro de teste, clique em “Salvar online” para substituir pelo estado atual do sistema."
+        );
+      }
+      return false;
+    }
+
+    if(!aplicarEstadoRecebido(loaded,semestre)){
+      throw new Error("Formato do estado incompatível");
+    }
+
+    cloudLoadedOnce=true;
+    const hora=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+    setCloudStatus(`Online • carregado ${hora}`,"ok");
+    render(false);
+    if(!silencioso) alert(`Dados online de ${state.semestreAtivo} carregados com sucesso.`);
+    return true;
+  }catch(err){
+    console.error("Erro ao carregar do n8n:",err);
+    setCloudStatus("Offline • usando dados locais","error");
+    if(!silencioso){
+      alert("Não foi possível carregar os dados online. O sistema continuará usando os dados salvos neste navegador.");
+    }
     return false;
   }
 }
@@ -1994,7 +2183,7 @@ function renderRelatorios(){
   panel.querySelector("#csv-horarios").onclick=()=>{ downloadCsv(`relatorio_horarios_${state.relPeriodo}.csv`,[["Disciplina","Dia","Turno","Bloco inicial","Qtd.","Docentes"],...horariosPeriodo.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return [of?.nome||"",h.dia,h.turno,h.blocoInicial,h.qtdBlocos,docs]; })]); };
   panel.querySelector("#pdf-horarios").onclick=()=>{ gerarPdfTabela(`Quadro de horários - ${state.relPeriodo}`,[["Disciplina","Dia","Turno","Bloco inicial","Qtd.","Docentes"]],horariosPeriodo.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return [of?.nome||"",h.dia,h.turno,h.blocoInicial,h.qtdBlocos,docs]; }),`relatorio_horarios_${state.relPeriodo}.pdf`); };
 }
-function render(){
+function render(sincronizarNuvem=true){
   auditarBaseSemanas();
   syncAtividades();
   syncOfertaEstrutura();
@@ -2005,8 +2194,14 @@ function render(){
   renderTabs(); showPanel(state.activeTab);
   renderDocentes(); renderOferta(); renderAtividades(); renderResumo(); renderHorarios(); renderGrade(); renderRelatorios();
   saveState();
+  if(sincronizarNuvem) agendarSalvamentoOnline();
 }
-document.getElementById("btnSeed").onclick=()=>{ if(!confirm("Carregar exemplo reinicia os dados locais do sistema. Deseja continuar?")) return; seedData(); render(); };
+document.getElementById("btnSeed").onclick=()=>{ 
+  if(!confirm("Carregar exemplo reinicia os dados locais do sistema. Deseja continuar?")) return;
+  seedData();
+  render(false);
+  setCloudStatus("Exemplo carregado só localmente","pending");
+};
 document.getElementById("btnExportJson").onclick=()=>{ sincronizarSemestreAtual(); downloadJson(`dch_uern_backup_${state.semestreAtivo.replace(".","_")}.json`, state); };
 document.getElementById("inputImport").onchange=(e)=>{ const file=e.target.files?.[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ 
   try{
@@ -2020,18 +2215,30 @@ document.getElementById("inputImport").onchange=(e)=>{ const file=e.target.files
     }
     const dados=garantirSemestre(state.semestreAtivo||"2027.1",true);
     state.oferta=dados.oferta||[]; state.atividades=dados.atividades||{}; state.horarios=dados.horarios||[];
-    syncAtividades(); render();
-    alert("Backup importado com sucesso.");
+    syncAtividades(); render(false);
+    setCloudStatus("Backup importado • clique em Salvar online","pending");
+    alert("Backup importado com sucesso. Para disponibilizá-lo a outras pessoas, clique em “Salvar online”.");
   }catch(err){ alert("Não foi possível importar esse arquivo JSON."); }
 }; reader.readAsText(file); };
 document.getElementById("btnReset").onclick=()=>{ 
   if(!confirm("ATENÇÃO: isso apagará os dados salvos neste navegador. Deseja realmente reiniciar o sistema?")) return;
   localStorage.removeItem(STORAGE_KEY);
   seedData();
-  render();
+  render(false);
+  setCloudStatus("Dados locais reiniciados • nuvem não alterada","pending");
 };
-if(!loadState()) seedData();
-render();
+const haviaDadosLocais=loadState();
+if(!haviaDadosLocais) seedData();
+render(false);
+setCloudStatus(haviaDadosLocais ? "Dados locais carregados" : "Base local inicial","local");
+
+// Não sobrescreve automaticamente os dados locais ao iniciar.
+// Tenta apenas carregar a nuvem silenciosamente quando houver um estado válido;
+// se o banco ainda tiver o JSON de teste, ele será ignorado.
+setTimeout(()=>carregarOnline(state.semestreAtivo,{confirmar:false,silencioso:true}),350);
+
+document.getElementById("btnSaveOnline").onclick=()=>salvarOnline(true);
+document.getElementById("btnLoadOnline").onclick=()=>carregarOnline(state.semestreAtivo,{confirmar:true,silencioso:false});
 </script>
 </body>
 </html>

@@ -344,3 +344,30 @@ input,select{width:100%;padding:.5rem .6rem;border:1px solid var(--border);borde
 }
 .general-report-table th:nth-child(19),
 .general-report-table td:nth-child(19){font-weight:700}
+
+.cloud-status{
+  display:inline-flex;
+  align-items:center;
+  min-height:38px;
+  padding:.45rem .7rem;
+  border-radius:999px;
+  font-size:.78rem;
+  font-weight:700;
+  white-space:nowrap;
+  border:1px solid var(--border);
+}
+.cloud-primary{font-weight:700}
+.cloud-local{background:#f3f5f8}
+.cloud-saving{background:#eef4ff}
+.cloud-pending{background:#fff8dd}
+.cloud-ok{background:#eaf8ef}
+.cloud-error{background:#fff0f0}
+.online-notice{
+  padding:.55rem 1.2rem;
+  font-size:.84rem;
+  background:#f7f9fc;
+  border-bottom:1px solid var(--border);
+}
+@media(max-width:900px){
+  .cloud-status{width:100%;justify-content:center}
+}
