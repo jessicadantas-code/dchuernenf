@@ -159,3 +159,43 @@ Fluxo recomendado:
 3. editar;
 4. clicar `Salvar online`;
 5. no outro dispositivo, clicar `Atualizar da nuvem`.
+
+
+## v12 — catálogo PPC 2025 completo
+
+Correção estrutural do catálogo e da oferta automática.
+
+### Oferta por semestre
+- Semestres `.1`: P1, P3, P5, P7 e P9.
+- Semestres `.2`: P2, P4, P6, P8 e P10.
+
+### PPC
+O catálogo interno passa a conter os 10 períodos completos, com CH teórica, prática e orientação conforme a matriz curricular PPC 2025.
+
+UCEs permanecem no catálogo para inclusão conforme a oferta real e não são adicionadas automaticamente à estrutura básica.
+Optativas permanecem disponíveis para inclusão manual.
+
+### Migração
+Ao abrir dados antigos ou carregar a versão compartilhada do n8n:
+- o catálogo é atualizado para a versão completa;
+- componentes obrigatórios faltantes do semestre são acrescentados;
+- CH de componentes já existentes é corrigida conforme o PPC;
+- docentes e módulos já vinculados são preservados;
+- componentes extras/manuais não são apagados automaticamente.
+
+Depois de conferir a oferta corrigida, clique em `Salvar online` para tornar a v12 a versão compartilhada.
+
+
+## v13 — correção de paridade da oferta
+
+A v12 atualizava o catálogo completo, mas preservava componentes obrigatórios antigos de períodos errados que já estavam gravados no n8n.
+
+A v13 corrige isso:
+- Semestres `.1`: obrigatórias apenas de P1, P3, P5, P7 e P9.
+- Semestres `.2`: obrigatórias apenas de P2, P4, P6, P8 e P10.
+- Obrigatórias oficiais do PPC pertencentes à paridade oposta são removidas automaticamente.
+- Optativas, UCEs, disciplinas especiais/estudo individual e componentes manuais são preservados.
+- Docentes e módulos vinculados a componentes válidos são preservados.
+- Horários de componentes obrigatórios removidos são limpos para não gerar registros órfãos.
+
+Após publicar esta versão, abra 2027.1, confira a oferta e clique em `Salvar online` para atualizar a versão compartilhada no n8n.

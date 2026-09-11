@@ -133,75 +133,85 @@ function makeComponente(periodo,codigo,nome,teorica,pratica,orientacao,total,tip
 }
 function buildCatalogo(){
   return [
-    makeComponente("P1","CAC0037","Vivência em Comunidade",30,30,0,60),
-    makeComponente("P1","CAC0036","Introdução ao estudo científico",45,0,0,45),
-    makeComponente("P1","CAC0035","Organização celular e metabolismo",90,30,0,120),
-    makeComponente("P1","CAC0034","Antropologia: cultura e saúde",45,0,0,45),
-    makeComponente("P1","CAC0033","Fundamentos da Sociologia",60,0,0,60),
-    makeComponente("P1","CFI0098","Introdução à Filosofia",60,0,0,60),
+    // 1º PERÍODO
+    {periodo:"P1",codigo:"CAC0037",nome:"Vivência em Comunidade",teorica:30,pratica:30,orientacao:0,total:60,tipo:"obrigatoria"},
+    {periodo:"P1",codigo:"CAC0036",nome:"Introdução ao estudo científico",teorica:45,pratica:0,orientacao:0,total:45,tipo:"obrigatoria"},
+    {periodo:"P1",codigo:"CAC0035",nome:"Organização celular e metabolismo",teorica:90,pratica:30,orientacao:0,total:120,tipo:"obrigatoria"},
+    {periodo:"P1",codigo:"CAC0034",nome:"Antropologia: cultura e saúde",teorica:45,pratica:0,orientacao:0,total:45,tipo:"obrigatoria"},
+    {periodo:"P1",codigo:"CAC0033",nome:"Fundamentos da Sociologia",teorica:60,pratica:0,orientacao:0,total:60,tipo:"obrigatoria"},
+    {periodo:"P1",codigo:"CFI0098",nome:"Introdução à Filosofia",teorica:60,pratica:0,orientacao:0,total:60,tipo:"obrigatoria"},
 
-    makeComponente("P2","CAC0038","Práticas Interprofissionais em Saúde",30,15,0,45),
-    makeComponente("P2","CAC0039","História da enfermagem",60,0,0,60),
-    makeComponente("P2","CAC0040","Epidemiologia",60,15,0,75),
-    makeComponente("P2","CAC0041","Saúde e gênero",30,0,0,30),
-    makeComponente("P2","CAC0042","Módulo morfofuncional I",105,45,0,150),
-    makeComponente("P2","UCE0022","UCE",15,0,45,60),
+    // 2º PERÍODO
+    {periodo:"P2",codigo:"CAC0038",nome:"Práticas Interprofissionais em Saúde",teorica:30,pratica:15,orientacao:0,total:45,tipo:"obrigatoria"},
+    {periodo:"P2",codigo:"CAC0039",nome:"História da enfermagem",teorica:60,pratica:0,orientacao:0,total:60,tipo:"obrigatoria"},
+    {periodo:"P2",codigo:"CAC0040",nome:"Epidemiologia",teorica:60,pratica:15,orientacao:0,total:75,tipo:"obrigatoria"},
+    {periodo:"P2",codigo:"CAC0041",nome:"Saúde e gênero",teorica:30,pratica:0,orientacao:0,total:30,tipo:"obrigatoria"},
+    {periodo:"P2",codigo:"CAC0042",nome:"Módulo morfofuncional I",teorica:105,pratica:45,orientacao:0,total:150,tipo:"obrigatoria"},
+    {periodo:"P2",codigo:"UCE0022",nome:"UCE",teorica:15,pratica:0,orientacao:45,total:60,tipo:"uce"},
 
-    makeComponente("P3","CAC0044","Investigação em Enfermagem",45,0,0,45),
-    makeComponente("P3","CAC0045","Ética e bioética na enfermagem",60,0,0,60),
-    makeComponente("P3","CAC0043","Módulo morfofuncional II",90,60,0,150),
-    makeComponente("P3","CAC0046","Saúde coletiva I",75,15,0,90),
-    makeComponente("P3","CAC0047","Saúde e meio ambiente",45,0,0,45),
-    makeComponente("P3","UCE0023","UCE",15,0,45,60),
+    // 3º PERÍODO
+    {periodo:"P3",codigo:"CAC0044",nome:"Investigação em Enfermagem",teorica:45,pratica:0,orientacao:0,total:45,tipo:"obrigatoria"},
+    {periodo:"P3",codigo:"CAC0045",nome:"Ética e bioética na enfermagem",teorica:60,pratica:0,orientacao:0,total:60,tipo:"obrigatoria"},
+    {periodo:"P3",codigo:"CAC0043",nome:"Módulo morfofuncional II",teorica:90,pratica:60,orientacao:0,total:150,tipo:"obrigatoria"},
+    {periodo:"P3",codigo:"CAC0046",nome:"Saúde coletiva I",teorica:75,pratica:15,orientacao:0,total:90,tipo:"obrigatoria"},
+    {periodo:"P3",codigo:"CAC0047",nome:"Saúde e meio ambiente",teorica:45,pratica:0,orientacao:0,total:45,tipo:"obrigatoria"},
+    {periodo:"P3",codigo:"UCE0023",nome:"UCE",teorica:15,pratica:0,orientacao:45,total:60,tipo:"uce"},
 
-    makeComponente("P4","CAC0048","Semiologia da enfermagem",45,45,0,90),
-    makeComponente("P4","CAC0049","Agentes biopatogênicos",90,30,0,120),
-    makeComponente("P4","CAC0050","Metodologia da assistência de enfermagem",45,15,0,60),
-    makeComponente("P4","CAC0051","Saúde coletiva II",45,15,0,60),
-    makeComponente("P4","UCE0024","UCE",15,0,45,60),
+    // 4º PERÍODO
+    {periodo:"P4",codigo:"CAC0048",nome:"Semiologia da enfermagem",teorica:45,pratica:45,orientacao:0,total:90,tipo:"obrigatoria"},
+    {periodo:"P4",codigo:"CAC0049",nome:"Agentes biopatogênicos",teorica:90,pratica:30,orientacao:0,total:120,tipo:"obrigatoria"},
+    {periodo:"P4",codigo:"CAC0050",nome:"Metodologia da assistência de enfermagem",teorica:45,pratica:15,orientacao:0,total:60,tipo:"obrigatoria"},
+    {periodo:"P4",codigo:"CAC0051",nome:"Saúde coletiva II",teorica:45,pratica:15,orientacao:0,total:60,tipo:"obrigatoria"},
+    {periodo:"P4",codigo:"UCE0024",nome:"UCE",teorica:15,pratica:0,orientacao:45,total:60,tipo:"uce"},
 
-    makeComponente("P5","CAC0052","Bioestatística básica",45,0,0,45),
-    makeComponente("P5","CAC0053","Semiotécnica da enfermagem",60,60,0,120),
-    makeComponente("P5","CAC0054","Farmacologia básica e aplicada",120,0,0,120),
-    makeComponente("P5","CAC0055","Patologia geral",45,0,0,45),
-    makeComponente("P5","UCE0025","UCE",15,0,45,60),
+    // 5º PERÍODO
+    {periodo:"P5",codigo:"CAC0052",nome:"Bioestatística básica",teorica:45,pratica:0,orientacao:0,total:45,tipo:"obrigatoria"},
+    {periodo:"P5",codigo:"CAC0053",nome:"Semiotécnica da enfermagem",teorica:60,pratica:60,orientacao:0,total:120,tipo:"obrigatoria"},
+    {periodo:"P5",codigo:"CAC0054",nome:"Farmacologia básica e aplicada",teorica:120,pratica:0,orientacao:0,total:120,tipo:"obrigatoria"},
+    {periodo:"P5",codigo:"CAC0055",nome:"Patologia geral",teorica:45,pratica:0,orientacao:0,total:45,tipo:"obrigatoria"},
+    {periodo:"P5",codigo:"UCE0025",nome:"UCE",teorica:15,pratica:0,orientacao:45,total:60,tipo:"uce"},
 
-    makeComponente("P6","CAC0056","Saúde mental",60,15,0,75),
-    makeComponente("P6","CAC0057","Processo gerenciar",45,15,0,60),
-    makeComponente("P6","CAC0058","Saúde sexual e reprodutiva",120,60,0,180),
-    makeComponente("P6","UCE0026","UCE",15,0,45,60),
-    makeComponente("P6","UCE0006","UCE",15,0,15,30),
+    // 6º PERÍODO
+    {periodo:"P6",codigo:"CAC0056",nome:"Saúde mental",teorica:60,pratica:15,orientacao:0,total:75,tipo:"obrigatoria"},
+    {periodo:"P6",codigo:"CAC0057",nome:"Processo gerenciar",teorica:45,pratica:15,orientacao:0,total:60,tipo:"obrigatoria"},
+    {periodo:"P6",codigo:"CAC0058",nome:"Saúde sexual e reprodutiva",teorica:120,pratica:60,orientacao:0,total:180,tipo:"obrigatoria"},
+    {periodo:"P6",codigo:"UCE0026",nome:"UCE",teorica:15,pratica:0,orientacao:45,total:60,tipo:"uce"},
+    {periodo:"P6",codigo:"UCE0006",nome:"UCE",teorica:15,pratica:0,orientacao:15,total:30,tipo:"uce"},
 
-    makeComponente("P7","CAC0060","Atenção à saúde da criança e do adolescente",150,30,0,180),
-    makeComponente("P7","CAC0061","Processo pesquisar",60,0,0,60),
-    makeComponente("P7","CAC0059","Urgência e emergência",45,30,0,75),
-    makeComponente("P7","UCE0027","UCE",15,0,45,60),
+    // 7º PERÍODO
+    {periodo:"P7",codigo:"CAC0060",nome:"Atenção à saúde da criança e do adolescente",teorica:150,pratica:30,orientacao:0,total:180,tipo:"obrigatoria"},
+    {periodo:"P7",codigo:"CAC0061",nome:"Processo Pesquisar",teorica:60,pratica:0,orientacao:0,total:60,tipo:"obrigatoria"},
+    {periodo:"P7",codigo:"CAC0059",nome:"Urgência e emergência",teorica:45,pratica:30,orientacao:0,total:75,tipo:"obrigatoria"},
+    {periodo:"P7",codigo:"UCE0027",nome:"UCE",teorica:15,pratica:0,orientacao:45,total:60,tipo:"uce"},
 
-    makeComponente("P8","CAC0062","Saúde do trabalhador",45,15,0,60),
-    makeComponente("P8","CAC0063","Cuidados clínicos e intensivos",150,45,0,195),
-    makeComponente("P8","CAC0064","Saúde da pessoa idosa",60,15,0,75),
-    makeComponente("P8","UCE0028","UCE",15,0,45,60),
+    // 8º PERÍODO
+    {periodo:"P8",codigo:"CAC0062",nome:"Saúde do trabalhador",teorica:45,pratica:15,orientacao:0,total:60,tipo:"obrigatoria"},
+    {periodo:"P8",codigo:"CAC0063",nome:"Cuidados clínicos e intensivos",teorica:150,pratica:45,orientacao:0,total:195,tipo:"obrigatoria"},
+    {periodo:"P8",codigo:"CAC0064",nome:"Saúde da pessoa idosa",teorica:60,pratica:15,orientacao:0,total:75,tipo:"obrigatoria"},
+    {periodo:"P8",codigo:"UCE0028",nome:"UCE",teorica:15,pratica:0,orientacao:45,total:60,tipo:"uce"},
 
-    makeComponente("P9","CAC0065","Estágio curricular supervisionado I",60,0,405,465),
-    makeComponente("P9","CAC0066","Monografia",15,0,30,45),
-    makeComponente("P10","CAC0067","Estágio curricular supervisionado II",60,0,420,480),
+    // 9º PERÍODO
+    {periodo:"P9",codigo:"CAC0065",nome:"Estágio curricular supervisionado I",teorica:60,pratica:0,orientacao:405,total:465,tipo:"obrigatoria",tipologia:"estagio"},
+    {periodo:"P9",codigo:"CAC0066",nome:"Monografia",teorica:15,pratica:0,orientacao:30,total:45,tipo:"obrigatoria",tipologia:"tcc"},
 
-    makeComponente("OPT","CEN0051","Atualização em imunologia e imunização",45,0,0,45,"optativa"),
-    makeComponente("OPT","CAC0072","Bioestatística avançada",45,0,0,45,"optativa"),
-    makeComponente("OPT","CAC0070","Bioética e interprofissionalidade",60,0,0,60,"optativa"),
-    makeComponente("OPT","CEN0070","Cuidados paliativos",45,0,0,45,"optativa"),
-    makeComponente("OPT","CEN0041","Educação popular em saúde",60,0,0,60,"optativa"),
-    makeComponente("OPT","CEN0072","Empreendedorismo em enfermagem",30,15,0,45,"optativa"),
-    makeComponente("OPT","CEN0054","Epidemias e endemias regionais",45,0,0,45,"optativa"),
-    makeComponente("OPT","CAC0073","Língua brasileira de sinais no contexto da saúde",60,0,0,60,"optativa"),
-    makeComponente("OPT","CAC0071","Metodologias de Ensino em Saúde",30,15,0,45,"optativa"),
-    makeComponente("OPT","CEN0071","Práticas integrativas e complementares em saúde (PICS)",45,0,0,45,"optativa"),
-    makeComponente("OPT","CAC0069","Psicologia da criança e do adolescente",60,0,0,60,"optativa"),
-    makeComponente("OPT","CEN0074","Raciocínio clínico em enfermagem",45,0,0,45,"optativa"),
-    makeComponente("OPT","CEN0073","Tecnologias em saúde e Enfermagem",30,15,0,45,"optativa"),
-    makeComponente("OPT","CAC0068","Transtornos Globais do Desenvolvimento (TGD)",45,0,0,45,"optativa"),
+    // 10º PERÍODO
+    {periodo:"P10",codigo:"CAC0067",nome:"Estágio curricular supervisionado II",teorica:60,pratica:0,orientacao:420,total:480,tipo:"obrigatoria",tipologia:"estagio"},
 
-    makeComponente("ESP","ESP-GERAL","Disciplina especial",45,0,0,45,"especial","individual"),
+    // OPTATIVAS DO PPC 2025
+    {periodo:"OPT",codigo:"CEN0051",nome:"Atualização em imunologia e imunização",teorica:45,pratica:0,orientacao:0,total:45,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CAC0072",nome:"Bioestatística Avançada",teorica:45,pratica:0,orientacao:0,total:45,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CAC0070",nome:"Bioética e Interprofissionalidade",teorica:60,pratica:0,orientacao:0,total:60,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CEN0070",nome:"Cuidados paliativos",teorica:45,pratica:0,orientacao:0,total:45,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CEN0041",nome:"Educação popular em saúde",teorica:60,pratica:0,orientacao:0,total:60,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CEN0072",nome:"Empreendedorismo em Enfermagem",teorica:30,pratica:15,orientacao:0,total:45,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CEN0054",nome:"Epidemias e endemias regionais",teorica:45,pratica:0,orientacao:0,total:45,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CAC0073",nome:"Língua brasileira de sinais no contexto da saúde",teorica:60,pratica:0,orientacao:0,total:60,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CAC0071",nome:"Metodologias de Ensino em Saúde",teorica:30,pratica:15,orientacao:0,total:45,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CEN0071",nome:"Práticas integrativas e complementares em saúde – PICS",teorica:45,pratica:0,orientacao:0,total:45,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CAC0069",nome:"Psicologia da criança e do adolescente",teorica:60,pratica:0,orientacao:0,total:60,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CEN0074",nome:"Raciocínio clínico em enfermagem",teorica:45,pratica:0,orientacao:0,total:45,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CEN0073",nome:"Tecnologias em saúde e Enfermagem",teorica:30,pratica:15,orientacao:0,total:45,tipo:"optativa"},
+    {periodo:"OPT",codigo:"CAC0068",nome:"Transtornos Globais do Desenvolvimento (TGD)",teorica:45,pratica:0,orientacao:0,total:45,tipo:"optativa"}
   ];
 }
 function fromCatalogo(comp){
@@ -249,6 +259,82 @@ function syncAtividades(){
   });
 }
 
+
+
+const PPC_CATALOGO_VERSION = "ppc2025-paridade-v13";
+
+function componenteEhBaseObrigatoria(comp){
+  return comp && comp.tipo==="obrigatoria" && !String(comp.codigo||"").startsWith("UCE");
+}
+
+function migrarCatalogoPPCCompleto(){
+  const novoCatalogo=buildCatalogo();
+  state.catalogo=novoCatalogo;
+
+  if(!state.semestres) state.semestres={};
+
+  const catalogoObrigatorioPorCodigo=new Map(
+    novoCatalogo
+      .filter(c=>componenteEhBaseObrigatoria(c))
+      .map(c=>[c.codigo,c])
+  );
+
+  Object.keys(state.semestres).forEach(semestre=>{
+    const sem=state.semestres[semestre];
+    if(!sem) return;
+    if(!Array.isArray(sem.oferta)) sem.oferta=[];
+
+    const periodosPermitidos=periodosBasicosDoSemestre(semestre);
+
+    sem.oferta=sem.oferta.filter(of=>{
+      const oficial=catalogoObrigatorioPorCodigo.get(of.codigo);
+      if(!oficial) return true;
+
+      const ehEspecial =
+        of.tipo==="especial" ||
+        of.especial==="individual" ||
+        of.especial==="turma";
+
+      if(ehEspecial) return true;
+
+      return periodosPermitidos.includes(oficial.periodo);
+    });
+
+    const baseEsperada=novoCatalogo.filter(c=>
+      periodosPermitidos.includes(c.periodo) &&
+      componenteEhBaseObrigatoria(c)
+    );
+
+    baseEsperada.forEach(comp=>{
+      const existente=sem.oferta.find(o=>o.codigo===comp.codigo);
+
+      if(existente){
+        existente.periodo=comp.periodo;
+        existente.nome=comp.nome;
+        existente.teorica=comp.teorica;
+        existente.pratica=comp.pratica;
+        existente.orientacao=comp.orientacao;
+        existente.total=comp.total;
+        existente.tipo="obrigatoria";
+      }else{
+        sem.oferta.push(fromCatalogo(comp));
+      }
+    });
+  });
+
+  state.ppcCatalogoVersion="ppc2025-paridade-v13";
+
+  if(state.semestreAtivo && state.semestres[state.semestreAtivo]){
+    const atual=state.semestres[state.semestreAtivo];
+    state.oferta=atual.oferta||[];
+    state.atividades=atual.atividades||{};
+    state.horarios=atual.horarios||[];
+
+    const idsValidos=new Set((state.oferta||[]).map(o=>o.id));
+    state.horarios=(state.horarios||[]).filter(h=>idsValidos.has(h.ofertaId));
+    atual.horarios=state.horarios;
+  }
+}
 
 function syncOfertaEstrutura(){
   (state.oferta||[]).forEach(of=>{
@@ -423,7 +509,7 @@ function renderSemesterBar(){
       <select id="semester-select">
         ${semestres.map(s=>`<option value="${s}" ${s===state.semestreAtivo?"selected":""}>${s}</option>`).join("")}
       </select>
-      <span class="semester-note">Obrigatórias carregadas automaticamente; optativas, UCEs e especiais entram conforme a oferta real. <strong>Base de cálculo: 15 semanas.</strong></span>
+      <span class="semester-note">Obrigatórias carregadas automaticamente; optativas, UCEs e especiais entram conforme a oferta real. <strong>Base de cálculo: 15 semanas.</strong> <strong>PPC 2025 completo: .1 = P1/P3/P5/P7/P9 • .2 = P2/P4/P6/P8/P10.</strong></span>
     </div>
     <div class="semester-actions">
       <button id="btn-new-semester">Criar semestre</button>
@@ -547,6 +633,7 @@ function seedData(){
     status:"confirmar"
   });
 
+  migrarCatalogoPPCCompleto();
   const dados = state.semestres[state.semestreAtivo];
   state.oferta = dados.oferta;
   state.atividades = dados.atividades;
@@ -594,6 +681,7 @@ function loadState(){
     state.oferta = dados.oferta || [];
     state.atividades = dados.atividades || {};
     state.horarios = dados.horarios || [];
+    migrarCatalogoPPCCompleto();
     syncAtividades();
     syncOfertaEstrutura();
     saveState(); // grava já na chave permanente
@@ -649,6 +737,7 @@ function aplicarEstadoRecebido(loaded, semestreSolicitado){
   state.oferta=dados.oferta||[];
   state.atividades=dados.atividades||{};
   state.horarios=dados.horarios||[];
+  migrarCatalogoPPCCompleto();
   syncAtividades();
   syncOfertaEstrutura();
   localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
@@ -1483,7 +1572,7 @@ function renderOferta(){
 
   panel.innerHTML=`<div class="bar"><h2>Oferta ${state.semestreAtivo}</h2></div>
   <div class="help">
-    As disciplinas obrigatórias da estrutura básica já vêm carregadas conforme o semestre .1 ou .2. <strong>Todos os cálculos semanais usam obrigatoriamente 15 semanas.</strong>
+    As disciplinas obrigatórias seguem estritamente a paridade do PPC 2025: semestres .1 = P1, P3, P5, P7 e P9; semestres .2 = P2, P4, P6, P8 e P10. Obrigatórias da paridade oposta são removidas automaticamente; optativas, UCEs e especiais permanecem conforme a oferta real. <strong>Todos os cálculos semanais usam obrigatoriamente 15 semanas.</strong>
     Optativas, UCEs e componentes especiais entram conforme a oferta real. Para disciplinas com prática em serviços,
     marque <strong>Prática em serviço/grupos</strong> e informe a quantidade de módulos práticos.
   </div>
@@ -2231,6 +2320,7 @@ document.getElementById("inputImport").onchange=(e)=>{ const file=e.target.files
     }
     const dados=garantirSemestre(state.semestreAtivo||"2027.1",true);
     state.oferta=dados.oferta||[]; state.atividades=dados.atividades||{}; state.horarios=dados.horarios||[];
+    migrarCatalogoPPCCompleto();
     syncAtividades(); render(false);
     setCloudStatus("Backup importado • clique em Salvar online","pending");
     alert("Backup importado com sucesso. Para disponibilizá-lo a outras pessoas, clique em “Salvar online”.");
