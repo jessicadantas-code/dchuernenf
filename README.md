@@ -138,3 +138,24 @@ Os dois workflows precisam estar **Published/Active** e usar as Production URLs 
 
 ### Observação de acesso
 Nesta primeira fase não há login. Quem tiver acesso ao site poderá visualizar os dados carregados. A interface também contém funções de edição; controle de edição/autenticação poderá ser acrescentado posteriormente.
+
+
+## v11 — sincronização segura entre dispositivos
+A v10 foi ajustada após testes em PC e celular.
+
+Mudanças:
+- removido o salvamento automático na nuvem após cada alteração;
+- alterações continuam sendo salvas automaticamente apenas no navegador local;
+- `Salvar online` é a única ação que publica a versão compartilhada;
+- `Atualizar da nuvem` busca explicitamente a versão mais recente do n8n;
+- ao abrir o site, o sistema tenta carregar a versão compartilhada;
+- o status mostra quando existem alterações locais ainda não publicadas;
+- salvar online pede confirmação para reduzir sobrescritas acidentais entre dispositivos;
+- a tabela `dch_semestres` continua com uma única linha por semestre via Upsert.
+
+Fluxo recomendado:
+1. abrir o site;
+2. aguardar a versão da nuvem carregar;
+3. editar;
+4. clicar `Salvar online`;
+5. no outro dispositivo, clicar `Atualizar da nuvem`.

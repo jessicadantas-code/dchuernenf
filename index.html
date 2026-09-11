@@ -20,7 +20,7 @@
     </div>
     <div class="topbar-actions">
       <button id="btnSaveOnline" class="cloud-primary">Salvar online</button>
-      <button id="btnLoadOnline">Carregar online</button>
+      <button id="btnLoadOnline">Atualizar da nuvem</button>
       <span id="cloudStatus" class="cloud-status cloud-local">Somente local</span>
       <button id="btnExportJson">Exportar JSON</button>
       <label class="file-label">Importar JSON<input id="inputImport" type="file" accept=".json" hidden /></label>
@@ -30,8 +30,9 @@
   </header>
 
   <div class="online-notice">
-    <strong>Modo online:</strong> o navegador mantém uma cópia local de segurança e o n8n guarda a versão compartilhada.
-    Use <strong>Salvar online</strong> para publicar alterações imediatamente.
+    <strong>Modo compartilhado:</strong> ao abrir, o sistema busca a versão do n8n. 
+    Alterações ficam salvas localmente até você clicar em <strong>Salvar online</strong>. 
+    Em outro dispositivo, use <strong>Atualizar da nuvem</strong> para receber a versão mais recente.
   </div>
   <nav class="tabs" id="tabs"></nav>
 
@@ -59,10 +60,9 @@ const LEGACY_STORAGE_KEYS = [
 
 const N8N_SAVE_URL = "https://jessicauern.app.n8n.cloud/webhook/dch-salvar";
 const N8N_LOAD_URL = "https://jessicauern.app.n8n.cloud/webhook/dch-carregar";
-const CLOUD_AUTOSAVE_DELAY = 1800;
-let cloudAutosaveTimer = null;
 let cloudSaveInProgress = false;
 let cloudLoadedOnce = false;
+let ultimaAtualizacaoOnline = "";
 
 const tabs = [
   { key: "docentes", label: "Docentes" },
@@ -433,7 +433,7 @@ function renderSemesterBar(){
     const destino=e.target.value;
     carregarSemestre(destino);
     render(false);
-    setCloudStatus(`Semestre ${destino} local • buscando online...`,"saving");
+    setCloudStatus(`Semestre ${destino} • buscando versão online...`,"saving");
     await carregarOnline(destino,{confirmar:false,silencioso:true});
   };
   bar.querySelector("#btn-new-semester").onclick = criarNovoSemestre;
@@ -657,8 +657,16 @@ function aplicarEstadoRecebido(loaded, semestreSolicitado){
 
 async function salvarOnline(mostrarMensagem=false){
   if(cloudSaveInProgress) return false;
+
+  if(mostrarMensagem){
+    const ok=confirm(
+      `Salvar na nuvem o estado atual de ${state.semestreAtivo}?\n\n`+
+      "Esta versão passará a ser a versão compartilhada e poderá substituir alterações feitas em outro dispositivo."
+    );
+    if(!ok) return false;
+  }
+
   cloudSaveInProgress=true;
-  clearTimeout(cloudAutosaveTimer);
 
   try{
     sincronizarSemestreAtual();
@@ -682,9 +690,11 @@ async function salvarOnline(mostrarMensagem=false){
     // A resposta pode ser JSON ou texto, dependendo do node Respond to Webhook.
     try{ await resposta.clone().json(); }catch(e){ try{ await resposta.text(); }catch(_){} }
 
-    const hora=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+    const agora=new Date();
+    ultimaAtualizacaoOnline=agora.toISOString();
+    const hora=agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
     setCloudStatus(`Online • salvo ${hora}`,"ok");
-    if(mostrarMensagem) alert("Dados salvos online com sucesso.");
+    if(mostrarMensagem) alert("Dados salvos online com sucesso. Esta é agora a versão compartilhada.");
     return true;
   }catch(err){
     console.error("Erro ao salvar no n8n:",err);
@@ -699,10 +709,9 @@ async function salvarOnline(mostrarMensagem=false){
 }
 
 function agendarSalvamentoOnline(){
-  // Evita uma execução do n8n a cada clique/digitação.
-  clearTimeout(cloudAutosaveTimer);
-  setCloudStatus("Alterações locais • aguardando sincronização","pending");
-  cloudAutosaveTimer=setTimeout(()=>salvarOnline(false),CLOUD_AUTOSAVE_DELAY);
+  // v11: sincronização com a nuvem é somente manual.
+  // Alterações continuam sendo salvas localmente no navegador.
+  setCloudStatus("Alterações locais • clique em Salvar online","pending");
 }
 
 async function carregarOnline(semestre=state.semestreAtivo,{confirmar=true,silencioso=false}={}){
@@ -733,8 +742,10 @@ async function carregarOnline(semestre=state.semestreAtivo,{confirmar=true,silen
     let bruto;
     if(linha && typeof linha==="object" && "dados_json" in linha){
       bruto=linha.dados_json;
+      ultimaAtualizacaoOnline = linha.atualizado_em || linha.updatedAt || "";
     }else{
       bruto=linha;
+      ultimaAtualizacaoOnline = "";
     }
 
     const loaded=parsePossivelJson(bruto);
@@ -756,8 +767,13 @@ async function carregarOnline(semestre=state.semestreAtivo,{confirmar=true,silen
     }
 
     cloudLoadedOnce=true;
-    const hora=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-    setCloudStatus(`Online • carregado ${hora}`,"ok");
+    let rotuloHora="";
+    if(ultimaAtualizacaoOnline){
+      const dt=new Date(ultimaAtualizacaoOnline);
+      if(!isNaN(dt)) rotuloHora=dt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+    }
+    if(!rotuloHora) rotuloHora=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+    setCloudStatus(`Nuvem atualizada • ${rotuloHora}`,"ok");
     render(false);
     if(!silencioso) alert(`Dados online de ${state.semestreAtivo} carregados com sucesso.`);
     return true;
@@ -2183,7 +2199,7 @@ function renderRelatorios(){
   panel.querySelector("#csv-horarios").onclick=()=>{ downloadCsv(`relatorio_horarios_${state.relPeriodo}.csv`,[["Disciplina","Dia","Turno","Bloco inicial","Qtd.","Docentes"],...horariosPeriodo.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return [of?.nome||"",h.dia,h.turno,h.blocoInicial,h.qtdBlocos,docs]; })]); };
   panel.querySelector("#pdf-horarios").onclick=()=>{ gerarPdfTabela(`Quadro de horários - ${state.relPeriodo}`,[["Disciplina","Dia","Turno","Bloco inicial","Qtd.","Docentes"]],horariosPeriodo.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return [of?.nome||"",h.dia,h.turno,h.blocoInicial,h.qtdBlocos,docs]; }),`relatorio_horarios_${state.relPeriodo}.pdf`); };
 }
-function render(sincronizarNuvem=true){
+function render(marcarAlteracao=true){
   auditarBaseSemanas();
   syncAtividades();
   syncOfertaEstrutura();
@@ -2194,7 +2210,7 @@ function render(sincronizarNuvem=true){
   renderTabs(); showPanel(state.activeTab);
   renderDocentes(); renderOferta(); renderAtividades(); renderResumo(); renderHorarios(); renderGrade(); renderRelatorios();
   saveState();
-  if(sincronizarNuvem) agendarSalvamentoOnline();
+  if(marcarAlteracao) setCloudStatus("Alterações locais • clique em Salvar online","pending");
 }
 document.getElementById("btnSeed").onclick=()=>{ 
   if(!confirm("Carregar exemplo reinicia os dados locais do sistema. Deseja continuar?")) return;
@@ -2230,11 +2246,10 @@ document.getElementById("btnReset").onclick=()=>{
 const haviaDadosLocais=loadState();
 if(!haviaDadosLocais) seedData();
 render(false);
-setCloudStatus(haviaDadosLocais ? "Dados locais carregados" : "Base local inicial","local");
+setCloudStatus(haviaDadosLocais ? "Dados locais carregados • buscando nuvem" : "Base local inicial • buscando nuvem","saving");
 
-// Não sobrescreve automaticamente os dados locais ao iniciar.
-// Tenta apenas carregar a nuvem silenciosamente quando houver um estado válido;
-// se o banco ainda tiver o JSON de teste, ele será ignorado.
+// Ao abrir, tenta carregar a versão compartilhada.
+// Se a nuvem estiver indisponível ou inválida, mantém os dados locais.
 setTimeout(()=>carregarOnline(state.semestreAtivo,{confirmar:false,silencioso:true}),350);
 
 document.getElementById("btnSaveOnline").onclick=()=>salvarOnline(true);
