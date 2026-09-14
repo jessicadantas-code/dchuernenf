@@ -388,3 +388,8 @@ input,select{width:100%;padding:.5rem .6rem;border:1px solid var(--border);borde
 .stage-supervision input{max-width:85px}
 .stage-total{padding:.45rem .6rem;background:#eef4ff;border-radius:8px;text-align:center}
 @media(max-width:900px){.stage-row-v15{grid-template-columns:1fr}}
+
+.grade-export-actions{justify-content:flex-end;margin-bottom:.7rem}
+.grade-export-title{text-align:center;margin-bottom:10px;font-size:14px;line-height:1.4}
+.imported-desc{max-width:620px;white-space:pre-wrap;margin-top:.25rem;line-height:1.35}
+button.primary,#xlsx-geral{font-weight:700}

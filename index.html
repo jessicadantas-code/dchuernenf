@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="./styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -57,6 +59,8 @@ const LEGACY_STORAGE_KEYS = [
   "dch_uern_sprint13",
   "dch_uern_sprint12"
 ];
+
+const BASE_PLANILHA_271 = [{"nome":"Jéssica Dantas de Sá Tinôco","matricula":"12588-1","regime":"40h","chEnsinoInformada":0.0,"funcao":"Chefe do departamento - PORTARIA Nº 4612/2025-GP/FUERN DE 24 DE NOVEMBRO DE 2025","chFuncao":20.0,"atividades":[{"categoria":"Membro do NDE","descricao":"Reconstitui        membros        para        o        Núcleo        Docente\nEstruturante        –        NDE        no         âmbito        do        Curso        de\nEnfermagem        do        Campus        Avançado        de        Caicó.    PORTARIA-SEI Nº 85, DE 04 DE MARÇO DE 2026.","ch":2.0},{"categoria":"Comissões","descricao":"PORTARIA-SEI No 23, DE 19 DE JANEIRO DE 2026. Membro da comissão para elaboração do Projeto Pedagógico do Curso de Tecnólogo em Cuidador de Idosos no âmbito do Campus Avançado de Caicó da UERN.                             PORTARIA N° 1269/2023-GP/FUERN DE 12 DE MAIO DE 2023:  designa membros para a Comissão Setorial de Avaliação\nInstitucional da Pós-Graduação Lato Sensu- COSAIPG-LS","ch":4.0},{"categoria":"Orientações de TCC","descricao":"EDJA ROCHELE GOMES BARACHO, LAISE BATISTA DANTAS, MARIA EDUARDA DANTAS FERNANDES, SANDY JANNE DOS SANTOS FELIX","ch":8.0},{"categoria":"PROFSAÚDE","descricao":"Marília Gabriela","ch":3.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GRUPECC (Coordenador)","ch":2.0},{"categoria":"PIBIC 26/27","descricao":"- CONSTRUÇÃO E VALIDAÇÃO DO DIAGNÓSTICO DE\nENFERMAGEM RESPOSTAS HUMANAS ÀS ALTERAÇÕES DO\nCICLO MENSTRUAL EM MULHERES EM IDADE REPRODUTIVA                                                                                                    - MAPEAMENTO E AVALIAÇÃO DOS IMPACTOS PSICOSSOCIAIS EM\nFAMÍLIAS DE CRIANÇAS COM TEA: SUBSÍDIOS PARA\nQUALIFICAÇÃO DA REDE DE ATENÇÃO EM CAICÓ/RN\n- DESENVOLVIMENTO DE PROTÓTIPO DE INTERFACE DIGITAL\nPARA REGISTRO DE ENFERMAGEM NO CUIDADO DE PESSOAS\nCOM FERIDAS NA CLÍNICA ESCOLA DE ENFERMAGEM","ch":8.0},{"categoria":"EXTENSÃO 2027","descricao":"- LINHA DE CUIDADO PERIOPERATÓRIO: cuidado seguro e integração na Clínica Escola de Enfermagem (coord)                                                              - CUIDADO DE SI: APOIO À AUTOGESTÃO DE CONDIÇÕES CRÔNICAS NO SERIDÓ POTIGUAR (membro)","ch":12.0}],"totalPlanilha":59.0},{"nome":"Jéssica Naiara de Medeiros Araújo","matricula":"13226-8","regime":"40h","chEnsinoInformada":0.0,"funcao":"Coordenadora do Programa de Pós-Graduação do Mestrado Profissional em Saúde da Família em Rede Nacional – Profsaúde - PORTARIA Nº 4995/2025-GP/FUERN DE 18 DE DEZEMBRO DE 2025","chFuncao":12.0,"atividades":[{"categoria":"Membro do NDE","descricao":"PORTARIA-SEI Nº 85, DE 04 DE MARÇO DE 2026.","ch":2.0},{"categoria":"Orientações de TCC","descricao":"DEBORA RAYSLA DE OLIVEIRA SILVA, MARIA LETICIA BEZERRA DE ARAUJO,  CLARA BEATRIZ PEREIRA DA SILVA, TAIZI MEDEIROS DE ANDRADE","ch":8.0},{"categoria":"PROFSAÚDE","descricao":"JARED WANDERSON MOURA DE SOUSA","ch":3.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GRUPECC (MEMBRO)","ch":1.0},{"categoria":"PIBIC 26/27","descricao":"- REGISTRO DIGITAL EM ENFERMAGEM: PROTÓTIPO DE\nINTERFACE DIGITAL PARA CONSULTA DE AMAMENTAÇÃO DA\nCLÍNICA ESCOLA DA UERN\n- INFLUÊNCIA DA REDE DE APOIO NA SAÚDE MENTAL DE\nPUÉRPERAS: DIRECIONAMENTOS PARA A CONSULTA DE\nENFERMAGEM NA ATENÇÃO PRIMÁRIA                            - ANÁLISE DOS FATORES CLÍNICOS E SOCIODEMOGRÁFICOS\nRELACIONADOS AO DESENVOLVIMENTO DO CÂNCER EM\nPACIENTES ACOMPANHADOS NA ATENÇÃO PRIMÁRIA À SAÚDE","ch":8.0},{"categoria":"EXTENSÃO 2027","descricao":"- LINHA DE CUIDADO PERIOPERATÓRIO: cuidado seguro e integração na Clínica Escola de Enfermagem (MEMBRO)                                                                                        - CUIDADO DE SI: APOIO À AUTOGESTÃO DE CONDIÇÕES CRÔNICAS NO SERIDÓ POTIGUAR (membro)","ch":4.0}],"totalPlanilha":38.0},{"nome":"Maura Vanessa Silva Sobreira","matricula":"7974-0","regime":"40h","chEnsinoInformada":0.0,"funcao":"Chefe do Departamento de Cursos Lato Sensu - PORTARIA N° 3649/2025-GP/FUERN DE 27 DE SETEMBRO DE 2025","chFuncao":20.0,"atividades":[{"categoria":"Coordenação de Estágio do Curso ou Unidade","descricao":"PORTARIA-SEI Nº 48, DE 13 DE FEVEREIRO DE 2026. Nomeia Coordenador (as) de Estágio Curricular Obrigatório do Curso de Enfermagem do Campus Avançado de Caicó.","ch":4.0},{"categoria":"Membro do NDE","descricao":"PORTARIA-SEI Nº 85, DE 04 DE MARÇO DE 2026.","ch":2.0},{"categoria":"FIEL E FIEB","descricao":"PORTARIA-SEI        Nº        108,        DE  11  DE    MARÇO   DE  2026. Reconstitui o Fórum Integrado de Ensino das Licenciaturas – FIEL, no âmbito do Curso de Graduação em Enfermagem do Campus Avançado de Caicó.                                                                                           PORTARIA-SEI        Nº        109,        DE        11        DE        MARÇO        DE        2026:    Reconstitui        o        Fórum        Integrado        de        Ensino        dos\nBacharelados        –        FIEB,        no        âmbito        do        Curso        de        Graduação\nem        Enfermagem        do        Campus        Avançado        de        Caicó.","ch":4.0},{"categoria":"Comissões","descricao":"PORTARIA N° 626/ 2024 -CAICÓ/RN - Conselho municipal de Saúde de Caicó.                                                     PORTARIA No 162/2023-GR/UERN DE 06 DE NOVEMBRO DE 2023: Constitui Membros do Conselho Editorial da Editora Universitária/Edições Uern.                                    PORTARIA N° 1269/2023-GP/FUERN DE 12 DE MAIO DE 2023:  designa membros para a Comissão Setorial de Avaliação\nInstitucional da Pós-Graduação Lato Sensu- COSAIPG-LS.                                                            Portaria N° 87/2024-GR/UERN: Constitui Comissão Própria de Avaliação – CPA.","ch":6.0},{"categoria":"Orientações de TCC","descricao":"ANA ROBERTA ALVES LUCENA, JENNEFER VITORYA SOARES DA SILVA e LARA CAROLYNNE SANTOS DE MEDEIROS NUNES","ch":6.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GESCOM (membro)","ch":1.0},{"categoria":"PIBIC 26/27","descricao":"- CONTRIBUIÇÕES DE PROTOCOLOS OPERACIONAIS PADRÕES\nNO PROCESSOS DE TRABALHO HOSPITALAR\n- PET SAÚDE EQUIDADE: CONTRIBUIÇÕES PARA FORMAÇÃO DE\nESTUDANTES NO SERIDÓ POTIGUAR","ch":8.0},{"categoria":"EXTENSÃO 2027","descricao":"- Saúde é democracia: qualificando a participação dos movimentos\nsociais do Rio Grande do Norte no SUS/RN nas lutas pelo direito à\nsaúde (COORD)                                                                           - Segurança do paciente e educação permanente em saúde:\nfortalecendo a atenção primária e atenção hospitalar (COORD)","ch":8.0}],"totalPlanilha":59.0},{"nome":"Rosangela Diniz Cavalcante","matricula":"5405-04-01 00:00:00","regime":"40h","chEnsinoInformada":15.0,"funcao":"Assessor(a) de Pró-Reitoria - Proex:  PORTARIA Nº 3649/2025-GP/FUERN DE 27 DE SETEMBRO DE 2025","chFuncao":20.0,"atividades":[{"categoria":"Coordenação do NDE","descricao":"Reconstitui\tmembros\tpara\to\tNúcleo\tDocente\nEstruturante\t–\tNDE\tno\tâmbito\tdo\tCurso\tde\nEnfermagem\tdo\tCampus\tAvançado\tde\tCaicó.  PORTARIA-SEI Nº 85, DE 04 DE MARÇO DE 2026.","ch":8.0},{"categoria":"FIEL E FIEB","descricao":"PORTARIA-SEI Nº 108, DE 11 DE MARÇO DE 2026. FIEL.","ch":2.0},{"categoria":"Comissões","descricao":"PORTARIA-SEI No 23, DE 19 DE JANEIRO DE 2026. Membro da comissão para elaboração do Projeto Pedagógico do Curso de Tecnólogo em Cuidador de Idosos no âmbito do Campus Avançado de Caicó da UERN.","ch":2.0},{"categoria":"Orientações de TCC","descricao":"MAINGRIDE DA SILVA NOBREGA, LOHAYNNE BRUNA FERNANDES DE ARAUJO e  LAYSA DO CARMO SOUZA","ch":6.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GRUPECC (MEMBRO)","ch":1.0},{"categoria":"PIBIC 26/27","descricao":"- VIVÊNCIAS E IMPACTOS DA VIOLÊNCIA OBSTÉTRICA EM\nPRIMÍPARAS DE UM MUNICÍPIO DO SERIDÓ RIO GRANDENSE                                                             - TRABALHO, MATERNIDADE E SAÚDE: UMA ANÁLISE DAS\nCONDIÇÕES LABORAIS E DOS DESAFIOS DE MULHERES\nCOSTUREIRAS EM UMA CIDADE DO SERTÃO POTIGUAR","ch":8.0},{"categoria":"EXTENSÃO 2027","descricao":"- NUPICS em Caicó (COORDENADORA)                                                                               -  Educação e cuidado em saúde: AÇÕES EXTENSIONISTAS PARA A PROMOÇÃO DA SAÚDE E FORMAÇÃO EM ENFERMAGEM. (membro)","ch":12.0}],"totalPlanilha":74.0},{"nome":"Linda Kátia Oliveira Sales","matricula":"8045-04-01 00:00:00","regime":"LICENÇA CAPACITAÇÃO","chEnsinoInformada":0.0,"funcao":"","chFuncao":0.0,"atividades":[{"categoria":"GRUPO DE PESQUISA","descricao":"GRUPECC (MEMBRO)","ch":1.0},{"categoria":"PROJETO DE ENSINO","descricao":"Brinquedo Terapêutico no Contexto Hospitalar: o brincar que cuida","ch":8.0},{"categoria":"PIBIC 26/27","descricao":"PERFIL CLÍNICO-EPIDEMIOLÓGICO DE MULHERES COM RECIDIVA DE CÂNCER DE MAMA: REVISÃO INTEGRATIVA","ch":8.0},{"categoria":"EXTENSÃO 2027","descricao":"- NUPICS (Membro)","ch":12.0}],"totalPlanilha":29.0},{"nome":"Ildone Forte de Morais","matricula":"5317-01-01 00:00:00","regime":"40h","chEnsinoInformada":0.0,"funcao":"","chFuncao":0.0,"atividades":[{"categoria":"FIEL E FIEB","descricao":"PORTARIA-SEI Nº 108, DE 11 DE MARÇO DE 2026. FIEL.","ch":2.0},{"categoria":"Comissões","descricao":"PORTARIA No 511 / 2025 - Caicó - Conselho Municipal da pessoa Idosa","ch":2.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GESCOM (membro)","ch":1.0},{"categoria":"PIBIC 26/27","descricao":"- O TRABALHO EM EQUIPE NO CAMPO DA SAÚDE E AS\nCOMPETÊNCIAS NECESSÁRIAS À PRÁTICA COLABORATIVA","ch":8.0},{"categoria":"EXTENSÃO 2027","descricao":"- VIVÊNCIAS INTERPROFISSIONAIS NO ABRIGO DE IDOSOS PEDRO GURGEL EM CAICÓ-RN (coordenador)","ch":8.0}],"totalPlanilha":21.0},{"nome":"Izabel Calixta de Alcântara","matricula":"8066-07-01 00:00:00","regime":"40h              * DISCIPLINA DE IMUNILOGIA 60H NO CURSO DE ODONTOLOGIA","chEnsinoInformada":0.0,"funcao":"","chFuncao":0.0,"atividades":[{"categoria":"Comissões","descricao":"Comissão de Extensão do Campus Caicó - membro suplente. Portaria nº 53/2026 de 14 de junho de 2026.","ch":2.0},{"categoria":"Coordenação de laboratório de ensino/prática profissional","descricao":"ATA DO CONSAD DE 10/08/2020, Aprovação das indicações  dos coordenadores de laboratórios do CaC eleitos pelos Departamentos: Bioquímica e Farmacologia - Profa. Izabel Calixta de Alcântara","ch":4.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GESCOM (membro)","ch":1.0}],"totalPlanilha":7.0},{"nome":"Antônia Liria Feitosa Nogueira Alvino","matricula":"8059-04-01 00:00:00","regime":"40h","chEnsinoInformada":0.0,"funcao":"","chFuncao":0.0,"atividades":[{"categoria":"Comissões","descricao":"Constitui Comissão de Avaliação responsável pelos\nProcedimentos de Heteroidentificação no âmbito da\nUern.  (4H)                                                                                                                                                                                                                    Parecerista EXTENDERE UERN.(2H)                                                                                          Membro FIEB - Portaria nº 332 de 26 de junho de 2026.","ch":8.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GRUPECC (MEMBRO)","ch":1.0},{"categoria":"EXTENSÃO 2027","descricao":"- Capacitação em Primeiros socorros e biosegurança para profissionais de enfermagem, portadores de insuficiencia renal cronica e seus cuidadores (membro)","ch":4.0}],"totalPlanilha":13.0},{"nome":"Raquel Mirtes Pereira da Silva","matricula":"8087-0","regime":"40h","chEnsinoInformada":0.0,"funcao":"","chFuncao":0.0,"atividades":[{"categoria":"Membro do NDE","descricao":"PORTARIA-SEI Nº 85, DE 04 DE MARÇO DE 2026.","ch":2.0},{"categoria":"FIEL E FIEB","descricao":"PORTARIA-SEI        Nº        109,        DE        11        DE        MARÇO        DE        2026:    Reconstitui        o        Fórum        Integrado        de        Ensino        dos\nBacharelados        –        FIEB,        no        âmbito        do        Curso        de        Graduação\nem        Enfermagem        do        Campus        Avançado        de        Caicó.","ch":2.0},{"categoria":"Comissões","descricao":"PORTARIA-SEI Nº 23, DE 19 DE JANEIRO DE 2026. Membro da comissão para elaboração do Projeto Pedagógico do Curso de Tecnólogo em Cuidador de Idosos no âmbito do Campus Avançado de Caicó da UERN.                                  Portaria No 8/2025-GR/UERN\nConstitui Comissão de Avaliação responsável pelos\nProcedimentos de Heteroidentificação no âmbito da\nUern.                                                                                                                                                                                                                                                                                                                                                             PORTARIA Nº 15/2025-GP/FUERN DE 02 DE JANEIRO DE 2025\nDispõe sobre designação de comitê especializado de planejamento para compras de bens e serviços relacionados às\náreas das ciências naturais, biológicas e da saúde, no âmbito da Fuern","ch":8.0},{"categoria":"Coordenação de laboratório de ensino/prática profissional","descricao":"Coordenação de laboratório","ch":4.0},{"categoria":"Orientações de TCC","descricao":"BRUNO LOPES DOS SANTOS FILHO e Miguel Lucas de Araujo Ribeiro","ch":4.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GRUPECC (MEMBRO)","ch":1.0},{"categoria":"PIBIC 26/27","descricao":"- PERFIL DE PACIENTES ACOMETIDOS POR LESÃO DE PELE\nATENDIDOS POR UM SERVIÇO DE REFERÊNCIA NO\nTRATAMENTO DE FERIDAS","ch":8.0},{"categoria":"EXTENSÃO 2027","descricao":"- LINHA DE CUIDADO PERIOPERATÓRIO: cuidado seguro e integração na Clínica Escola de Enfermagem (membro)","ch":4.0}],"totalPlanilha":33.0},{"nome":"Cristyanne Samara Miranda Holanda da Nóbrega","matricula":"4498-09-01 00:00:00","regime":"40h","chEnsinoInformada":0.0,"funcao":"Orientação acadêmica 85 alunos","chFuncao":0.0,"atividades":[{"categoria":"Orientação acadêmica de curso de graduação","descricao":"Orientação acadêmica — PORTARIA-SEI No 389, DE 24 DE JULHO DE 2023.\nRecompõe Orientação Acadêmica do Curso\nde Enfermagem do Campus Avançado\nde Caicó da UERN.","ch":6.0},{"categoria":"Membro do NDE","descricao":"PORTARIA-SEI Nº 85, DE 04 DE MARÇO DE 2026.","ch":2.0},{"categoria":"Orientações de TCC","descricao":"ACUCENA MOARA AZEVEDO SILVA, STEFANNY BEATRIZ BATISTA DE SOUZA","ch":4.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GRUPECC (MEMBRO)","ch":1.0},{"categoria":"PIBIC 26/27","descricao":"- PRÉ-NATAL DE ALTO RISCO: PERCEPÇÕES E SENTIMENTOS DE\nGESTANTES DIANTE DO ACOMPANHAMENTO ESPECIALIZADO      -A DOR QUE NÃO SE VÊ: VIVÊNCIAS DE MULHERES NO LUTO\nPERINATAL E O CUIDADO EM SAÚDE","ch":8.0},{"categoria":"EXTENSÃO 2027","descricao":"- Deleite (coordenadora)                                                       - Educação e cuidado em saúde (membro)                                           - Educação e cuidado em saúde: AÇÕES EXTENSIONISTAS PARA A PROMOÇÃO DA SAÚDE E FORMAÇÃO EM ENFERMAGEM. (membro)","ch":12.0},{"categoria":"Monitoria 26.2","descricao":"","ch":4.0}],"totalPlanilha":37.0},{"nome":"Roberta Kaliny de Souza Costa","matricula":"4513-06-01 00:00:00","regime":"40h","chEnsinoInformada":0.0,"funcao":"Orientação acadêmica 77 alunos","chFuncao":0.0,"atividades":[{"categoria":"Orientação acadêmica de curso de graduação","descricao":"Orientação acadêmica —PORTARIA-SEI No 389, DE 24 DE JULHO DE 2023. \nRecompõe Orientação Acadêmica do Curso\nde Enfermagem do Campus Avançado\nde Caicó da UERN.","ch":4.0},{"categoria":"Membro do NDE","descricao":"PORTARIA-SEI Nº 85, DE 04 DE MARÇO DE 2026.","ch":2.0},{"categoria":"Orientações de TCC","descricao":"ANA GESSICA OLIVEIRA DA COSTA e         JOAO VICTOR DE ARAUJO","ch":4.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GRUPECC (MEMBRO)","ch":1.0},{"categoria":"PIBIC 26/27","descricao":"- PERCEPÇÕES DE MULHERES SOBRE A ASSISTÊNCIA PRÉ-NATAL\nNA ATENÇÃO PRIMÁRIA À SAÚDE E SUA RELAÇÃO COM O\nPROCESSO DECISÓRIO SOBRE O TIPO DE PARTO  -CONHECIMENTO DE ESTUDANTES DA ÁREA DA SAÚDE SOBRE\nPROFILAXIA PRÉ-EXPOSIÇÃO (PREP) E PÓS-EXPOSIÇÃO (PEP) AO\nHIV EM UMA UNIVERSIDADE PÚBLICA DO INTERIOR DO RIO\nGRANDE DO NORTE","ch":8.0},{"categoria":"EXTENSÃO 2027","descricao":"- Deleite (membro)                                                                                                                   - Educação e cuidado em saúde: AÇÕES EXTENSIONISTAS PARA A PROMOÇÃO DA SAÚDE E FORMAÇÃO EM ENFERMAGEM. (coordenadora)","ch":12.0}],"totalPlanilha":31.0},{"nome":"Roberta Luna da Costa Freire Russo","matricula":"4522-05-01 00:00:00","regime":"40h","chEnsinoInformada":0.0,"funcao":"","chFuncao":0.0,"atividades":[{"categoria":"GRUPO DE PESQUISA","descricao":"GESCOM (MEMBRO)","ch":1.0},{"categoria":"PIBIC 26/27","descricao":"HISTÓRIA DAS CLASSIFICAÇÕES PSIQUIÁTRICAS","ch":8.0},{"categoria":"EXTENSÃO 2027","descricao":"Dialogando com a enfermagem na escola (coordenadora)                                             - Educação e cuidado em saúde (membro)                                         - Educação e cuidado em saúde: AÇÕES EXTENSIONISTAS PARA A PROMOÇÃO DA SAÚDE E FORMAÇÃO EM ENFERMAGEM. (membro)","ch":12.0}],"totalPlanilha":21.0},{"nome":"Dulcian Medeiros de Azevedo","matricula":"5417-08-01 00:00:00","regime":"40h","chEnsinoInformada":0.0,"funcao":"Vice Coordenador Profsaude- PORTARIA Nº 4996/2025-GP/FUERN DE 18 DE DEZEMBRO DE 2025.","chFuncao":6.0,"atividades":[{"categoria":"Membro do NDE","descricao":"PORTARIA-SEI Nº 85, DE 04 DE MARÇO DE 2026.","ch":2.0},{"categoria":"Comissões","descricao":"PORTARIA-SEI Nº 84, DE 04 DE MARÇO DE 2026. Nomeia a Comissão de Desempenho Acadêmico do Curso (CDA) de Enfermagem do Campus Avançado de Caicó da Universidade do Estado do Rio Grande do Norte.","ch":2.0},{"categoria":"Orientações de TCC","descricao":"STEPHANY MARIA MEDEIROS SOARES e EMELY CARLA DA SILVA SANTOS","ch":4.0},{"categoria":"PROFSAÚDE","descricao":"Evandilson Marcos da Silva","ch":3.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GRUPECC (MEMBRO)","ch":1.0},{"categoria":"PIBIC 26/27","descricao":"ACOLHIMENTO E CLASSIFICAÇÃO DE RISCO DO PACIENTE\nPEDIÁTRICO: AÇÕES EDUCATIVAS EM SAÚDE PARA\nPROFISSIONAIS DE ENFERMAGEM  -EDUCAÇÃO PERMANENTE EM SAÚDE PARA PREVENÇÃO DE\nINFECÇÕES RELACIONADAS À ASSISTÊNCIA À SAÚDE","ch":8.0},{"categoria":"EXTENSÃO 2027","descricao":"- Música e Educação: Formação Musical para a Comunidade  (membro)                                                                                                                   - Grupo teraupetico para pessoas em uso problemático de substancias psicoativas (coordenador)","ch":12.0}],"totalPlanilha":38.0},{"nome":"Erika Maria Fernandes de Medeiros Rocha","matricula":"8053-01-01 00:00:00","regime":"40h","chEnsinoInformada":0.0,"funcao":"","chFuncao":0.0,"atividades":[{"categoria":"Coordenação de Estágio do Curso ou Unidade","descricao":"Portaria-SEI No 133, de 19 de março de 2025: Nomeia Coordenação de Estágio Curricular Supervisionado Obrigatório de Bacharelado e Licenciatura da Unidade Campus Avançado de Caicó.","ch":4.0},{"categoria":"FIEL E FIEB","descricao":"PORTARIA-SEI Nº 108, DE 11 DE MARÇO DE 2026.         e       PORTARIA-SEI        Nº        109,        DE        11        DE        MARÇO        DE        2026:    Reconstitui        o        Fórum        Integrado        de        Ensino        dos\nBacharelados        –        FIEB,        no        âmbito        do        Curso        de        Graduação\nem        Enfermagem        do        Campus        Avançado        de        Caicó.","ch":4.0},{"categoria":"Comissões","descricao":"PORTARIA No 511 / 2025 - Caicó - Conselho Municipal da pessoa Idosa","ch":2.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GESCOM (MEMBRO)","ch":1.0},{"categoria":"EXTENSÃO 2027","descricao":"- UERN 60+ (membro)","ch":4.0}],"totalPlanilha":15.0},{"nome":"Regilene Alves Portela","matricula":"7953-07-01 00:00:00","regime":"40h","chEnsinoInformada":0.0,"funcao":"Subchefe - PORTARIA Nº 4613/2025-GP/FUERN DE 24 DE NOVEMBRO DE 2025","chFuncao":10.0,"atividades":[{"categoria":"Membro do NDE","descricao":"PORTARIA-SEI Nº 85, DE 04 DE MARÇO DE 2026.","ch":2.0},{"categoria":"Comissões","descricao":"PORTARIA-SEI Nº 84, DE 04 DE MARÇO DE 2026. Nomeia a Comissão de Desempenho Acadêmico do Curso (CDA) de Enfermagem do Campus Avançado de Caicó da Universidade do Estado do Rio Grande do Norte.                   PORTARIA No. 471 / 2024/ Caicó: Nomeia o Comitê  \nMunicipal de Educação Ambiental – CMEA:","ch":4.0},{"categoria":"GRUPO DE PESQUISA","descricao":"GESCOM (MEMBRO)","ch":1.0},{"categoria":"EXTENSÃO 2027","descricao":"- Laços que protegem: família, cuidado e prevenção da violência sexual contra crianças e adolescentes(coordenadora)                                                         - NUPICS (membro)                                              - Saúde é democracia: qualificando a participação dos movimentos sociais do Rio Grande do Norte no SUS/RN nas lutas pelo direito à saúde (membro)","ch":4.0}],"totalPlanilha":21.0},{"nome":"Ana Clara Dantas","matricula":"13927-0","regime":"40h","chEnsinoInformada":0.0,"funcao":"","chFuncao":0.0,"atividades":[{"categoria":"GRUPO DE PESQUISA","descricao":"GRUPECC (MEMBRO)","ch":1.0},{"categoria":"EXTENSÃO 2027","descricao":"- CUIDADO DE SI: APOIO À AUTOGESTÃO DE CONDIÇÕES CRÔNICAS NO SERIDÓ POTIGUAR (coordenadora)                                                             - LINHA DE CUIDADO PERIOPERATÓRIO: cuidado seguro e integração na Clínica Escola de Enfermagem (membro)","ch":12.0}],"totalPlanilha":13.0}];
 
 const N8N_SAVE_URL = "https://jessicauern.app.n8n.cloud/webhook/dch-salvar";
 const N8N_LOAD_URL = "https://jessicauern.app.n8n.cloud/webhook/dch-carregar";
@@ -544,6 +548,175 @@ function renderSemesterBar(){
   bar.querySelector("#btn-duplicate-semester").onclick = duplicarSemestreAtual;
 }
 
+
+const BASE_PLANILHA_271_VERSION="planilha-27.1-v16";
+
+function normalizaNome(txt){
+  return String(txt||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+}
+const ALIASES_PLANILHA_271={
+  "jessica dantas de sa tinoco":["jessica tinoco"],
+  "jessica naiara de medeiros araujo":["jessica naiara"],
+  "maura vanessa silva sobreira":["maura vanessa"],
+  "rosangela diniz cavalcante":["rosangela diniz"],
+  "linda katia oliveira sales":["linda katia"],
+  "ildone forte de morais":["ildone fortes","ildone forte"],
+  "izabel calixta de alcantara":["izabel calixta"],
+  "antonia liria feitosa nogueira alvino":["liria alvino"],
+  "raquel mirtes pereira da silva":["raquel mirtes"],
+  "cristyanne samara miranda holanda da nobrega":["cristyanne samara"],
+  "roberta kaliny de souza costa":["roberta kalily","roberta kaliny"],
+  "roberta luna da costa freire russo":["roberta luna"],
+  "dulcian medeiros de azevedo":["dulcian azevedo"],
+  "erika maria fernandes de medeiros rocha":["erika fernandes"],
+  "regilene alves portela":["regilene alves"],
+  "ana clara dantas":["ana clara dantas"]
+};
+
+function encontrarDocenteBase(nome){
+  const alvo=normalizaNome(nome);
+  const aliases=[alvo,...(ALIASES_PLANILHA_271[alvo]||[])];
+  return state.docentes.find(d=>aliases.includes(normalizaNome(d.nome))) || null;
+}
+function extrairNumeroAto(texto){
+  const limpo=String(texto||"").replace(/\s+/g," ").trim();
+  const m=limpo.match(/PORTARIA(?:-SEI)?\s*(?:N[º°o.]?\s*)?([0-9]+(?:\s*\/\s*[0-9]{4})?(?:-GP\/FUERN)?)/i);
+  if(m) return `Portaria ${m[1].replace(/\s+/g,"")}`;
+  if(/ATA DO CONSAD/i.test(limpo)){
+    const a=limpo.match(/ATA DO CONSAD DE\s*([0-9\/]+)/i);
+    return a ? `ATA DO CONSAD DE ${a[1]}` : "ATA DO CONSAD";
+  }
+  return "";
+}
+function gerarPortariasDaBase(item){
+  const fontes=[];
+  if(item.funcao) fontes.push({atividade:item.funcao,descricao:item.funcao});
+  (item.atividades||[]).forEach(a=>{
+    if(/portaria|ata do consad/i.test(a.descricao||"")){
+      fontes.push({atividade:a.categoria,descricao:a.descricao});
+    }
+  });
+  return fontes.map(f=>({
+    id:uid(),
+    atividade:f.atividade||"",
+    numero:extrairNumeroAto(f.descricao)||"Ato/Portaria conforme planilha 27.1",
+    data:"",
+    orgao:"UERN",
+    descricao:f.descricao||"",
+    vigencia:"2027.1 — vigente conforme planilha-base",
+    fonte:"Planilha informações docentes — aba 27.1",
+    status:"vigente"
+  }));
+}
+function aplicarAtividadesBase271(a,item){
+  a.pesquisaInstitucionalizadaQtd=0;
+  a.coordProjetoPibicQtd=0;
+  a.monitoriaQtd=0;
+  a.extensaoCoordenacaoQtd=0;
+  a.extensaoMembroQtd=0;
+  a.grupoPesquisaMembro=false;
+  a.grupoPesquisaLider=false;
+  a.nde="none";
+  a.fiel=false; a.fieb=false; a.comiteEtica=false;
+  a.orientacoesTcc=0; a.orientacoesMestrado=0;
+  a.outrasComissoes=(a.outrasComissoes||[]).filter(x=>x.origem!=="planilha27.1");
+  a.pesquisaDescricao=""; a.pibicDescricao=""; a.monitoriaDescricao="";
+  a.extensaoCoordDescricao=""; a.extensaoMembroDescricao="";
+  a.grupoPesquisaNome=""; a.tccDescricao=""; a.mestradoDescricao="";
+  a.chEnsinoInformadaBase=Number(item.chEnsinoInformada||0);
+  a.totalPlanilhaBase=Number(item.totalPlanilha||0);
+  a.preenchimentoStatus="validado";
+
+  const extras=[];
+  (item.atividades||[]).forEach(x=>{
+    const cat=x.categoria||"", desc=x.descricao||"", ch=Number(x.ch||0);
+    const low=cat.toLowerCase();
+
+    if(low==="orientações de tcc"){
+      a.orientacoesTcc=Math.min(4,Math.round(ch/2));
+      a.tccDescricao=desc;
+    }else if(low==="profsaúde"){
+      a.orientacoesMestrado=Math.round(ch/3);
+      a.mestradoDescricao=desc;
+    }else if(low==="grupo de pesquisa"){
+      a.grupoPesquisaNome=desc;
+      if(ch>=2 || /coord|lider|líder/i.test(desc)) a.grupoPesquisaLider=true;
+      else if(ch>0) a.grupoPesquisaMembro=true;
+    }else if(low==="pibic 26/27"){
+      a.coordProjetoPibicQtd=Math.max(0,Math.round(ch/8));
+      a.pibicDescricao=desc;
+    }else if(low==="extensão 2027"){
+      const coords=(desc.match(/coord/gi)||[]).length;
+      const membros=(desc.match(/membro/gi)||[]).length;
+      if(coords || membros){
+        a.extensaoCoordenacaoQtd=coords;
+        a.extensaoMembroQtd=membros;
+      }else if(ch===8){
+        a.extensaoCoordenacaoQtd=1;
+      }else if(ch>0){
+        a.extensaoMembroQtd=Math.round(ch/4);
+      }
+      const linhas=desc.split(/\n| {2,}/).map(s=>s.trim()).filter(Boolean);
+      a.extensaoCoordDescricao=linhas.filter(s=>/coord/i.test(s)).join("\n");
+      a.extensaoMembroDescricao=linhas.filter(s=>/membro/i.test(s)).join("\n");
+      if(!a.extensaoCoordDescricao && !a.extensaoMembroDescricao) a.extensaoMembroDescricao=desc;
+    }else if(low==="monitoria 26.2"){
+      a.monitoriaQtd=Math.round(ch/4);
+      a.monitoriaDescricao=desc;
+    }else if(low==="coordenação do nde"){
+      if(ch>0) a.nde="coordenacao";
+    }else if(low==="membro do nde"){
+      if(ch>0 && a.nde!=="coordenacao") a.nde="membro";
+    }else if(low==="fiel e fieb"){
+      if(/fiel/i.test(desc)) a.fiel=true;
+      if(/fieb|bacharel/i.test(desc)) a.fieb=true;
+      if(!a.fiel && !a.fieb && ch>=2) a.fiel=true;
+    }else{
+      extras.push({nome:cat,ch,portaria:extrairNumeroAto(desc),descricao:desc,origem:"planilha27.1"});
+    }
+  });
+
+  a.outrasComissoes.push(...extras);
+  a.observacoes=[
+    a.observacoes||"",
+    "Dados institucionais pré-preenchidos a partir da aba 27.1 da planilha-base."
+  ].filter(Boolean).join("\n");
+}
+function aplicarBasePlanilha271(){
+  if(state.basePlanilha271Version===BASE_PLANILHA_271_VERSION) return false;
+  if(!state.semestres) state.semestres={};
+  const sem=garantirSemestre("2027.1",true);
+  if(!sem.atividades) sem.atividades={};
+
+  BASE_PLANILHA_271.forEach(item=>{
+    let d=encontrarDocenteBase(item.nome);
+    if(!d){
+      d={id:uid(),nome:item.nome,regime:item.regime||"40h",minimoSala:0,funcao:"",chFuncao:0,
+         matricula:"",cpf:"",titulacao:"",lattes:"",email:""};
+      state.docentes.push(d);
+    }
+    d.nome=item.nome;
+    d.matricula=item.matricula||d.matricula||"";
+    d.regime=item.regime||d.regime||"";
+    d.funcao=item.funcao||"";
+    d.chFuncao=Number(item.chFuncao||0);
+    d.chEnsinoInformadaBase=Number(item.chEnsinoInformada||0);
+
+    const anterior=sem.atividades[d.id]||atividadePadrao();
+    const portariasManuais=(anterior.portarias||[]).filter(p=>p.fonte!=="Planilha informações docentes — aba 27.1");
+    aplicarAtividadesBase271(anterior,item);
+    anterior.portarias=[...portariasManuais,...gerarPortariasDaBase(item)];
+    sem.atividades[d.id]=anterior;
+  });
+
+  state.basePlanilha271Version=BASE_PLANILHA_271_VERSION;
+  if(state.semestreAtivo==="2027.1"){
+    state.atividades=sem.atividades;
+    syncAtividades();
+  }
+  return true;
+}
+
 function seedData(){
   state.docentes = [
     ["Jéssica Tinôco",4,"Chefe do departamento",4],
@@ -664,6 +837,7 @@ function seedData(){
   state.atividadeDocenteId = state.docentes[0]?.id || "";
   state.relPeriodo = "";
   syncAtividades();
+  aplicarBasePlanilha271();
 }
 function saveState(){
   sincronizarSemestreAtual();
@@ -702,6 +876,8 @@ function loadState(){
     migrarCatalogoPPCCompleto();
     syncAtividades();
     syncOfertaEstrutura();
+    aplicarBasePlanilha271();
+    if(state.semestreAtivo==="2027.1") state.atividades=state.semestres["2027.1"].atividades;
     saveState(); // grava já na chave permanente
     return true;
   }catch(err){
@@ -758,6 +934,8 @@ function aplicarEstadoRecebido(loaded, semestreSolicitado){
   migrarCatalogoPPCCompleto();
   syncAtividades();
   syncOfertaEstrutura();
+  aplicarBasePlanilha271();
+  if(state.semestreAtivo==="2027.1") state.atividades=state.semestres["2027.1"].atividades;
   localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
   return true;
 }
@@ -991,15 +1169,22 @@ function calcAtividadesDocente(docenteId){
 }
 function calcResumoDocente(docente){
   let sala=0, regencia=0, estagioSupervisao=0;
-  state.oferta.forEach(of=>{ const c=calcDisciplinaParaDocente(of, docente.id); sala+=c.sala; regencia+=c.regencia; });
+  state.oferta.forEach(of=>{
+    const c=calcDisciplinaParaDocente(of, docente.id);
+    sala+=c.sala; regencia+=c.regencia;
+    if(isEstagio(of)) estagioSupervisao+=Number(c.estagioSupervisao||0);
+  });
   const acts=calcAtividadesDocente(docente.id);
   return {
-    sala:roundInt(sala), regencia:roundInt(regencia), monitoria:roundInt(acts.monitoria),
+    sala:roundInt(sala), estagioSupervisao:roundInt(estagioSupervisao), regencia:roundInt(regencia),
+    monitoria:roundInt(acts.monitoria),
     pesquisaInstitucionalizada:roundInt(acts.pesquisaInstitucionalizada), grupoPesquisa:roundInt(acts.grupoPesquisa),
     coordProjetoPibic:roundInt(acts.coordProjetoPibic), extensao:roundInt(acts.extensao),
     orientTcc:roundInt(acts.orientTcc), orientMestrado:roundInt(acts.orientMestrado),
     comissoes:roundInt(acts.comissoes),
-    total:roundInt(sala+regencia+acts.monitoria+acts.pesquisaInstitucionalizada+acts.grupoPesquisa+acts.coordProjetoPibic+acts.extensao+acts.orientTcc+acts.orientMestrado+acts.comissoes+Number(docente.chFuncao||0)),
+    total:roundInt(sala+estagioSupervisao+regencia+acts.monitoria+acts.pesquisaInstitucionalizada+
+      acts.grupoPesquisa+acts.coordProjetoPibic+acts.extensao+acts.orientTcc+
+      acts.orientMestrado+acts.comissoes+Number(docente.chFuncao||0)),
     detalhado:acts
   };
 }
@@ -1159,6 +1344,112 @@ function linhaRelatorioGeral(d){
     d.chFielFieb,d.comiteEtica,d.chComiteEtica,d.comissoes,d.chComissoes,
     d.portarias,d.observacoes,d.status,d.total
   ];
+}
+
+
+function gerarExcelRelatorioGeral(){
+  if(!window.XLSX){
+    alert("A biblioteca de Excel não foi carregada. Verifique sua conexão com a internet.");
+    return;
+  }
+  const wb=XLSX.utils.book_new();
+  const geral=dadosRelatorioGeral();
+
+  const resumo=[
+    ["UNIVERSIDADE DO ESTADO DO RIO GRANDE DO NORTE — Campus Caicó — Curso de Enfermagem"],
+    [`DCH — ${state.semestreAtivo}`],
+    [],
+    ["Docente","Matrícula","Regime","CH ensino/sala","Supervisão estágio","Regência","Função","CH função",
+     "Pesquisa","PIBIC","Extensão","Monitoria","TCC","Mestrado","Grupo pesquisa","NDE","FIEL/FIEB",
+     "Outras atividades/comissões","Total CH"]
+  ];
+  geral.forEach(d=>resumo.push([
+    d.nome,d.matricula,d.regime,d.chEnsino,d.chEstagioSupervisao||0,d.regencia,d.funcao,d.chFuncao,
+    d.chPesquisa,d.chPibic,d.chExtensao,d.chMonitoria,d.chTcc,d.chMestrado,d.chGrupo,d.chNde,d.chFielFieb,
+    d.chComissoes,d.total
+  ]));
+  resumo.push(["TOTAL GERAL","","","","","","","","","","","","","","","","","",
+    geral.reduce((s,d)=>s+Number(d.total||0),0)]);
+  const wsResumo=XLSX.utils.aoa_to_sheet(resumo);
+  wsResumo["!cols"]=[{wch:34},{wch:14},{wch:18},{wch:13},{wch:16},{wch:11},{wch:45},{wch:11},
+    ...Array(10).fill({wch:13}),{wch:14}];
+  XLSX.utils.book_append_sheet(wb,wsResumo,"Resumo DCH");
+
+  const disc=[["Docente","Período","Código","Disciplina","CH T total","CH P total","CH O total",
+    "T/docente semanal","P/docente semanal","Módulo/grupo","Ensino/sala","Supervisão estágio","Regência","Memória de cálculo"]];
+  state.docentes.forEach(doc=>{
+    state.oferta.filter(of=>(of.docentes||[]).includes(doc.id)).forEach(of=>{
+      const c=calcDisciplinaParaDocente(of,doc.id);
+      const mods=modulosDoDocente(of,doc.id).map(m=>[m.nome,m.grupo,m.local].filter(Boolean).join(" / ")).join("; ");
+      let memoria="";
+      if(isEstagio(of)) memoria=`60h ÷ 15 = 4h ensino + ${c.estagioSupervisao||4}h supervisão = ${c.estagioTotal||8}h`;
+      else if(isUCE(of)) memoria="UCE = 1h de sala";
+      else memoria=`T: ${Number(of.teorica||0)}÷15÷${(of.docentes||[]).length||1}; P: ${Number(of.pratica||0)}÷15${of.praticaServico?" por módulo/grupo":""}`;
+      disc.push([doc.nome,of.periodo,of.codigo,of.nome,Number(of.teorica||0),Number(of.pratica||0),Number(of.orientacao||0),
+        Number(c.teoricaSemanal||0),Number(c.praticaSemanal||0),mods,c.sala,Number(c.estagioSupervisao||0),c.regencia,memoria]);
+    });
+  });
+  const wsDisc=XLSX.utils.aoa_to_sheet(disc);
+  wsDisc["!cols"]=[{wch:32},{wch:9},{wch:12},{wch:38},{wch:11},{wch:11},{wch:11},{wch:16},{wch:16},{wch:32},{wch:12},{wch:16},{wch:11},{wch:48}];
+  wsDisc["!autofilter"]={ref:`A1:N${disc.length}`};
+  XLSX.utils.book_append_sheet(wb,wsDisc,"Disciplinas CH T-P");
+
+  const atos=[["Docente","Categoria","Descrição","CH","Portaria/ato"]];
+  state.docentes.forEach(doc=>{
+    const a=state.atividades[doc.id]||atividadePadrao();
+    if(doc.funcao || Number(doc.chFuncao||0)) atos.push([doc.nome,"Função",doc.funcao||"",Number(doc.chFuncao||0),""]);
+    const mapa=[
+      ["Pesquisa institucionalizada",a.pesquisaDescricao,calcAtividadesDocente(doc.id).pesquisaInstitucionalizada],
+      ["PIBIC",a.pibicDescricao,calcAtividadesDocente(doc.id).coordProjetoPibic],
+      ["Extensão — coordenação",a.extensaoCoordDescricao,Number(a.extensaoCoordenacaoQtd||0)*8],
+      ["Extensão — membro",a.extensaoMembroDescricao,Number(a.extensaoMembroQtd||0)*4],
+      ["Monitoria",a.monitoriaDescricao,calcAtividadesDocente(doc.id).monitoria],
+      ["TCC",a.tccDescricao,calcAtividadesDocente(doc.id).orientTcc],
+      ["PROFSAÚDE/Mestrado",a.mestradoDescricao,calcAtividadesDocente(doc.id).orientMestrado],
+      ["Grupo de pesquisa",a.grupoPesquisaNome,calcAtividadesDocente(doc.id).grupoPesquisa]
+    ];
+    mapa.forEach(x=>{ if(x[1] || Number(x[2]||0)) atos.push([doc.nome,x[0],x[1]||"",Number(x[2]||0),""]); });
+    (a.outrasComissoes||[]).forEach(x=>atos.push([doc.nome,x.nome||"Outra atividade",x.descricao||"",Number(x.ch||0),x.portaria||""]));
+  });
+  const wsAtos=XLSX.utils.aoa_to_sheet(atos);
+  wsAtos["!cols"]=[{wch:32},{wch:34},{wch:85},{wch:9},{wch:30}];
+  wsAtos["!autofilter"]={ref:`A1:E${atos.length}`};
+  XLSX.utils.book_append_sheet(wb,wsAtos,"Atividades");
+
+  const ports=[["Docente","Atividade/vínculo","Número/ato","Data","Órgão","Vigência","Status","Descrição","Fonte"]];
+  state.docentes.forEach(doc=>{
+    const a=state.atividades[doc.id]||{};
+    (a.portarias||[]).forEach(p=>ports.push([doc.nome,p.atividade||"",p.numero||"",p.data||"",p.orgao||"",p.vigencia||"",p.status||"",p.descricao||"",p.fonte||""]));
+  });
+  const wsPorts=XLSX.utils.aoa_to_sheet(ports);
+  wsPorts["!cols"]=[{wch:32},{wch:38},{wch:28},{wch:13},{wch:14},{wch:28},{wch:16},{wch:90},{wch:35}];
+  wsPorts["!autofilter"]={ref:`A1:I${ports.length}`};
+  XLSX.utils.book_append_sheet(wb,wsPorts,"Portarias");
+
+  const baseHead=["Nome completo","Matrícula","Regime","CH ensino informada","Função/atividade","CH função"];
+  const cats=["Orientação acadêmica de curso de graduação","Orientação para prática pedagógica","Supervisão de estágio não obrigatório",
+    "Coordenação de Estágio do Curso ou Unidade","Orientação de Trabalho de Conclusão de Curso","Coordenação Geral do Internato",
+    "Coordenação do NDE","Membro do NDE","Coordenador da Comissão Setorial de Avaliação","Membro da Comissão Setorial de Avaliação",
+    "FIEL E FIEB","Comissões","Coordenação de laboratório de ensino/prática profissional","Orientações de TCC","PROFSAÚDE",
+    "GRUPO DE PESQUISA","PROJETO DE ENSINO","PIBIC 26/27","EXTENSÃO 2027","Monitoria 26.2"];
+  cats.forEach(c=>baseHead.push(c,`CH — ${c}`));
+  baseHead.push("Total CH base");
+  const base=[baseHead];
+  BASE_PLANILHA_271.forEach(item=>{
+    const row=[item.nome,item.matricula,item.regime,item.chEnsinoInformada,item.funcao,item.chFuncao];
+    cats.forEach(c=>{
+      const a=(item.atividades||[]).find(x=>x.categoria===c);
+      row.push(a?.descricao||"",Number(a?.ch||0));
+    });
+    row.push(item.totalPlanilha);
+    base.push(row);
+  });
+  const wsBase=XLSX.utils.aoa_to_sheet(base);
+  wsBase["!cols"]=baseHead.map((h,i)=>({wch:i===0?32:(i>=6 && (i-6)%2===0?62:13)}));
+  wsBase["!autofilter"]={ref:`A1:${XLSX.utils.encode_col(baseHead.length-1)}${base.length}`};
+  XLSX.utils.book_append_sheet(wb,wsBase,"Base planilha 27.1");
+
+  XLSX.writeFile(wb,`DCH_UERN_Enfermagem_${state.semestreAtivo}.xlsx`);
 }
 
 function gerarPdfRelatorioGeral(dados){
@@ -2128,12 +2419,42 @@ function renderGrade(){
   const panel=document.getElementById("panel-grade");
   const filtered=state.horarios.filter(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); if(!of || isEspecialIndividual(of)) return false; if(state.gradeFilters.view==="turma") return !state.gradeFilters.turma || of.periodo===state.gradeFilters.turma; return !state.gradeFilters.docente || (of.docentes||[]).includes(state.gradeFilters.docente); });
   panel.innerHTML=`<div class="bar"><h2>Grade semanal</h2><div class="filters"><div><label>Visualizar por</label><select id="grade-view"><option value="turma" ${state.gradeFilters.view==="turma"?"selected":""}>Turma</option><option value="docente" ${state.gradeFilters.view==="docente"?"selected":""}>Docente</option></select></div><div id="grade-wrap-turma" style="display:${state.gradeFilters.view==="turma"?"block":"none"}"><label>Turma</label><select id="grade-turma"><option value="">Todas</option>${[...new Set(state.oferta.map(o=>o.periodo).filter(Boolean))].map(periodo=>`<option value="${periodo}" ${state.gradeFilters.turma===periodo?"selected":""}>${periodo}</option>`).join("")}</select></div><div id="grade-wrap-docente" style="display:${state.gradeFilters.view==="docente"?"block":"none"}"><label>Docente</label><select id="grade-docente"><option value="">Todos</option>${state.docentes.map(doc=>`<option value="${doc.id}" ${state.gradeFilters.docente===doc.id?"selected":""}>${doc.nome||"(sem nome)"}</option>`).join("")}</select></div></div></div>
-  <div class="card"><table class="grade-table"><thead><tr><th>Turno / Bloco</th>${dias.map(d=>`<th>${d}</th>`).join("")}</tr></thead><tbody>
+  <div class="card" id="grade-export-area"><div class="grade-export-title"><strong>UERN — Enfermagem Caicó</strong><br>Grade semanal — ${state.semestreAtivo}</div><table class="grade-table"><thead><tr><th>Turno / Bloco</th>${dias.map(d=>`<th>${d}</th>`).join("")}</tr></thead><tbody>
   ${Object.entries(blocosPorTurno).map(([turno,blocos])=>blocos.map(bloco=>`<tr><th>${turno} • ${bloco.numero}<br><span class="small">${bloco.faixa}</span></th>${dias.map(dia=>{ const hits=filtered.filter(h=>{ if(h.dia!==dia||h.turno!==turno) return false; const ini=Number(h.blocoInicial), fim=ini+Number(h.qtdBlocos)-1; return bloco.numero>=ini && bloco.numero<=fim; }); return `<td class="grade-cell">${hits.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return `<div class="slot-card"><div class="slot-title">${of?.nome||""}</div><div class="slot-sub">${of?.periodo||""}</div><div class="slot-sub">${docs}</div></div>`; }).join("")}</td>`; }).join("")}</tr>`).join("")).join("")}
   </tbody></table></div>`;
   panel.querySelector("#grade-view").onchange=e=>{ state.gradeFilters.view=e.target.value; render(); };
   panel.querySelector("#grade-turma").onchange=e=>{ state.gradeFilters.turma=e.target.value; render(); };
   panel.querySelector("#grade-docente").onchange=e=>{ state.gradeFilters.docente=e.target.value; render(); };
+
+  const baixarCanvas=async()=>{
+    const area=panel.querySelector("#grade-export-area");
+    if(!area || !window.html2canvas) throw new Error("Biblioteca de imagem não carregada");
+    return await html2canvas(area,{scale:2,backgroundColor:"#ffffff",useCORS:true,scrollX:0,scrollY:0,windowWidth:area.scrollWidth});
+  };
+  const btnPng=panel.querySelector("#grade-png");
+  if(btnPng) btnPng.onclick=async()=>{
+    try{
+      const canvas=await baixarCanvas();
+      const a=document.createElement("a");
+      a.download=`grade_semanal_${state.semestreAtivo}.png`;
+      a.href=canvas.toDataURL("image/png");
+      a.click();
+    }catch(e){ console.error(e); alert("Não foi possível gerar a imagem da grade."); }
+  };
+  const btnPdf=panel.querySelector("#grade-pdf");
+  if(btnPdf) btnPdf.onclick=async()=>{
+    try{
+      if(!window.jspdf?.jsPDF) throw new Error("jsPDF indisponível");
+      const canvas=await baixarCanvas();
+      const {jsPDF}=window.jspdf;
+      const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:"a3"});
+      const margin=8, pw=pdf.internal.pageSize.getWidth()-margin*2, ph=pdf.internal.pageSize.getHeight()-margin*2;
+      const ratio=Math.min(pw/canvas.width,ph/canvas.height);
+      const w=canvas.width*ratio,h=canvas.height*ratio;
+      pdf.addImage(canvas.toDataURL("image/png"),"PNG",margin,margin,w,h);
+      pdf.save(`grade_semanal_${state.semestreAtivo}.pdf`);
+    }catch(e){ console.error(e); alert("Não foi possível gerar o PDF da grade."); }
+  };
 }
 function gerarPdfTabela(title, head, body, filename){
   if(!window.jspdf?.jsPDF){
@@ -2174,11 +2495,11 @@ function renderRelatorios(){
     <div class="bar">
       <div>
         <h3>Relatório Geral Institucional</h3>
-        <div class="small">Uma única visão em tela; o PDF geral é organizado em quadros para melhorar a leitura sem perder disciplinas, atividades e portarias.</div>
+        <div class="small">A entrega institucional principal agora é em Excel, com abas de resumo, disciplinas/CH teórica-prática, atividades, portarias e base 27.1.</div>
       </div>
       <div class="inline-actions">
-        <button id="csv-geral">Baixar relatório geral (CSV)</button>
-        <button id="pdf-geral">Baixar relatório geral (PDF)</button>
+        <button id="xlsx-geral" class="primary">Baixar relatório geral (Excel)</button>
+        <button id="csv-geral">CSV de apoio</button>
       </div>
     </div>
     <div class="report-note">
@@ -2187,7 +2508,7 @@ function renderRelatorios(){
     <div class="table-scroll general-report-scroll">
       <table class="general-report-table">
         <thead><tr>
-          <th>Docente</th><th>Disciplinas / cálculo</th><th>CH ensino</th><th>Regência</th>
+          <th>Docente</th><th>Disciplinas / cálculo</th><th>CH ensino</th><th>Supervisão estágio</th><th>Regência</th>
           <th>Função/Portaria</th><th>CH função</th><th>Pesquisa</th><th>PIBIC</th>
           <th>Extensão</th><th>Monitoria</th><th>TCC</th><th>Mestrado</th>
           <th>Grupo de pesquisa</th><th>NDE</th><th>FIEL/FIEB</th><th>Comitê de Ética</th>
@@ -2311,6 +2632,7 @@ function renderRelatorios(){
     <tbody>${horariosPeriodo.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return `<tr><td>${of?.nome||""}</td><td>${h.dia}</td><td>${h.turno}</td><td>${h.blocoInicial}</td><td>${h.qtdBlocos}</td><td>${docs}</td></tr>`; }).join("")}</tbody></table>
   </div>`;
 
+  panel.querySelector("#xlsx-geral").onclick=()=>gerarExcelRelatorioGeral();
   panel.querySelector("#csv-geral").onclick=()=>{
     downloadCsv(
       `relatorio_geral_${state.semestreAtivo.replace(".","_")}.csv`,
@@ -2321,7 +2643,6 @@ function renderRelatorios(){
       ]
     );
   };
-  panel.querySelector("#pdf-geral").onclick=()=>gerarPdfRelatorioGeral(geral);
 
   panel.querySelector("#rel-docente").onchange=e=>{ state.relDocenteId=e.target.value; render(); };
   panel.querySelector("#rel-periodo").onchange=e=>{ state.relPeriodo=e.target.value; render(); };

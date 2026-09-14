@@ -219,3 +219,22 @@ Regra consolidada com a coordenação:
 - as 4h de ensino entram em Sala de Aula/Ensino;
 - as 4h de supervisão entram em categoria própria `Supervisão de estágio`;
 - o total geral da DCH soma ambas.
+
+
+## v16 — planilha 27.1, grade exportável e entrega em Excel
+
+### Base institucional 27.1
+- Pré-preenche docentes, matrículas, regimes, funções e CH de função a partir da aba `27.1` da planilha fornecida.
+- Pré-preenche projetos/atividades de pesquisa, extensão, grupo de pesquisa, PROFSAÚDE, TCC, monitoria, NDE, FIEL/FIEB e demais atividades/atos registrados.
+- Registra como vigentes as portarias/atos localizados na aba 27.1, mantendo a descrição da planilha.
+- CPFs NÃO são embutidos no código do GitHub. CPFs já existentes no estado local/nuvem são preservados.
+- Docentes existentes que não constam da planilha não são apagados automaticamente.
+
+### Grade semanal
+- `Baixar como imagem` gera PNG da grade semanal.
+- `Baixar como PDF` gera PDF paisagem da mesma grade.
+
+### Relatório institucional
+- A entrega geral principal passa a ser `Excel (.xlsx)`.
+- Abas: `Resumo DCH`, `Disciplinas CH T-P`, `Atividades`, `Portarias` e `Base planilha 27.1`.
+- A aba `Disciplinas CH T-P` detalha CH teórica, prática, orientação, valores semanais, módulos, supervisão de estágio e regência.
