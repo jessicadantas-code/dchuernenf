@@ -24,12 +24,13 @@
       <button id="btnSaveOnline" class="cloud-primary">Salvar online</button>
       <button id="btnLoadOnline">Atualizar da nuvem</button>
       <span id="cloudStatus" class="cloud-status cloud-local">Somente local</span>
+      <button id="btnApply271" class="apply271-btn">Aplicar/atualizar dados da planilha 27.1</button>
       <button id="btnExportJson">Exportar JSON</button>
       <label class="file-label">Importar JSON<input id="inputImport" type="file" accept=".json" hidden /></label>
       <button id="btnSeed">Carregar exemplo</button>
       <button id="btnReset" class="danger">Limpar tudo</button>
     </div>
-  <div class="version-badge">V16 CORRIGIDA • 27.1</div><div class="base-badge">Base institucional 27.1 carregada</div></header>
+  <div class="version-badge">V17 • DADOS 27.1</div><div class="base-badge">Base institucional 27.1 disponível</div></header>
 
   <div class="online-notice">
     <strong>Modo compartilhado:</strong> ao abrir, o sistema busca a versão do n8n. 
@@ -549,7 +550,7 @@ function renderSemesterBar(){
 }
 
 
-const BASE_PLANILHA_271_VERSION="planilha-27.1-v16-corrigida";
+const BASE_PLANILHA_271_VERSION="planilha-27.1-v17-dados-corrigidos";
 
 function normalizaNome(txt){
   return String(txt||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
@@ -609,6 +610,7 @@ function gerarPortariasDaBase(item){
   }));
 }
 function aplicarAtividadesBase271(a,item){
+  // Zera apenas os campos que serão reconstruídos pela base 27.1.
   a.pesquisaInstitucionalizadaQtd=0;
   a.coordProjetoPibicQtd=0;
   a.monitoriaQtd=0;
@@ -619,66 +621,153 @@ function aplicarAtividadesBase271(a,item){
   a.nde="none";
   a.fiel=false; a.fieb=false; a.comiteEtica=false;
   a.orientacoesTcc=0; a.orientacoesMestrado=0;
+
+  a.pesquisaDescricao="";
+  a.pibicDescricao="";
+  a.monitoriaDescricao="";
+  a.extensaoCoordDescricao="";
+  a.extensaoMembroDescricao="";
+  a.grupoPesquisaNome="";
+  a.tccDescricao="";
+  a.mestradoDescricao="";
+
+  // Remove apenas registros anteriormente importados da própria planilha.
   a.outrasComissoes=(a.outrasComissoes||[]).filter(x=>x.origem!=="planilha27.1");
-  a.pesquisaDescricao=""; a.pibicDescricao=""; a.monitoriaDescricao="";
-  a.extensaoCoordDescricao=""; a.extensaoMembroDescricao="";
-  a.grupoPesquisaNome=""; a.tccDescricao=""; a.mestradoDescricao="";
-  a.chEnsinoInformadaBase=Number(item.chEnsinoInformada||0);
-  a.totalPlanilhaBase=Number(item.totalPlanilha||0);
-  a.preenchimentoStatus="validado";
 
   const extras=[];
-  (item.atividades||[]).forEach(x=>{
-    const cat=x.categoria||"", desc=x.descricao||"", ch=Number(x.ch||0);
-    const low=cat.toLowerCase();
+  const achar=(nome)=>(item.atividades||[]).find(x=>x.categoria===nome) || null;
 
-    if(low==="orientações de tcc"){
-      a.orientacoesTcc=Math.min(4,Math.round(ch/2));
-      a.tccDescricao=desc;
-    }else if(low==="profsaúde"){
-      a.orientacoesMestrado=Math.round(ch/3);
-      a.mestradoDescricao=desc;
-    }else if(low==="grupo de pesquisa"){
-      a.grupoPesquisaNome=desc;
-      if(ch>=2 || /coord|lider|líder/i.test(desc)) a.grupoPesquisaLider=true;
-      else if(ch>0) a.grupoPesquisaMembro=true;
-    }else if(low==="pibic 26/27"){
-      a.coordProjetoPibicQtd=Math.max(0,Math.round(ch/8));
-      a.pibicDescricao=desc;
-    }else if(low==="extensão 2027"){
-      const coords=(desc.match(/coord/gi)||[]).length;
-      const membros=(desc.match(/membro/gi)||[]).length;
-      if(coords || membros){
-        a.extensaoCoordenacaoQtd=coords;
-        a.extensaoMembroQtd=membros;
-      }else if(ch===8){
-        a.extensaoCoordenacaoQtd=1;
-      }else if(ch>0){
-        a.extensaoMembroQtd=Math.round(ch/4);
+  // PIBIC 26/27 — a planilha informa diretamente a CH correspondente.
+  const pibic=achar("PIBIC 26/27");
+  if(pibic){
+    a.pibicDescricao=pibic.descricao||"";
+    a.coordProjetoPibicQtd=Math.max(0,Math.round(Number(pibic.ch||0)/8));
+    // Preserva também o lançamento-fonte integral para auditoria.
+    extras.push({
+      nome:"PIBIC 26/27 — registro da planilha",
+      ch:Number(pibic.ch||0),
+      portaria:extrairNumeroAto(pibic.descricao||""),
+      descricao:pibic.descricao||"",
+      origem:"planilha27.1",
+      naoSomar:true
+    });
+  }
+
+  // EXTENSÃO 2027 — usa a CH total da planilha e separa coordenação/membro
+  // quando a descrição permite identificar. Se não permitir, mantém como
+  // atividade-fonte sem perder a CH informada.
+  const ext=achar("EXTENSÃO 2027");
+  if(ext){
+    const desc=ext.descricao||"";
+    const linhas=desc.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+    const coordLines=linhas.filter(s=>/coordena|coordenador|coordenadora|\(coord/i.test(s));
+    const membroLines=linhas.filter(s=>/membro|\(membro/i.test(s));
+
+    a.extensaoCoordDescricao=coordLines.join("\n");
+    a.extensaoMembroDescricao=membroLines.join("\n");
+
+    let coordQtd=coordLines.length;
+    let membroQtd=membroLines.length;
+
+    // Ajusta as quantidades para reproduzir a CH total registrada na planilha.
+    const chFonte=Number(ext.ch||0);
+    let chCalc=coordQtd*8 + membroQtd*4;
+
+    if(chCalc!==chFonte){
+      if(chFonte%8===0 && coordQtd>0 && membroQtd===0){
+        coordQtd=chFonte/8;
+      }else if(chFonte%4===0 && coordQtd===0){
+        membroQtd=chFonte/4;
+      }else{
+        // Mantém a descrição nos campos e a diferença fica registrada como fonte.
+        const falta=Math.max(0,chFonte-chCalc);
+        if(falta>0 && falta%4===0) membroQtd+=falta/4;
       }
-      const linhas=desc.split(/\n| {2,}/).map(s=>s.trim()).filter(Boolean);
-      a.extensaoCoordDescricao=linhas.filter(s=>/coord/i.test(s)).join("\n");
-      a.extensaoMembroDescricao=linhas.filter(s=>/membro/i.test(s)).join("\n");
-      if(!a.extensaoCoordDescricao && !a.extensaoMembroDescricao) a.extensaoMembroDescricao=desc;
-    }else if(low==="monitoria 26.2"){
-      a.monitoriaQtd=Math.round(ch/4);
-      a.monitoriaDescricao=desc;
-    }else if(low==="coordenação do nde"){
-      if(ch>0) a.nde="coordenacao";
-    }else if(low==="membro do nde"){
-      if(ch>0 && a.nde!=="coordenacao") a.nde="membro";
-    }else if(low==="fiel e fieb"){
-      if(/fiel/i.test(desc)) a.fiel=true;
-      if(/fieb|bacharel/i.test(desc)) a.fieb=true;
-      if(!a.fiel && !a.fieb && ch>=2) a.fiel=true;
-    }else{
-      extras.push({nome:cat,ch,portaria:extrairNumeroAto(desc),descricao:desc,origem:"planilha27.1"});
     }
+
+    a.extensaoCoordenacaoQtd=Math.max(0,coordQtd);
+    a.extensaoMembroQtd=Math.max(0,membroQtd);
+
+    if(!a.extensaoCoordDescricao && !a.extensaoMembroDescricao){
+      a.extensaoMembroDescricao=desc;
+    }
+
+    extras.push({
+      nome:"EXTENSÃO 2027 — registro da planilha",
+      ch:chFonte,
+      portaria:extrairNumeroAto(desc),
+      descricao:desc,
+      origem:"planilha27.1",
+      naoSomar:true
+    });
+  }
+
+  // Grupo de pesquisa
+  const grupo=achar("GRUPO DE PESQUISA");
+  if(grupo){
+    a.grupoPesquisaNome=grupo.descricao||"";
+    if(Number(grupo.ch||0)>=2 || /coord|lider|líder/i.test(grupo.descricao||"")) a.grupoPesquisaLider=true;
+    else if(Number(grupo.ch||0)>0) a.grupoPesquisaMembro=true;
+  }
+
+  // PROFSAÚDE / mestrado
+  const prof=achar("PROFSAÚDE");
+  if(prof){
+    a.mestradoDescricao=prof.descricao||"";
+    a.orientacoesMestrado=Math.max(0,Math.round(Number(prof.ch||0)/3));
+  }
+
+  // Orientações TCC
+  const tcc=achar("Orientações de TCC");
+  if(tcc){
+    a.tccDescricao=tcc.descricao||"";
+    a.orientacoesTcc=Math.min(4,Math.max(0,Math.round(Number(tcc.ch||0)/2)));
+  }
+
+  // Monitoria
+  const mon=achar("Monitoria 26.2");
+  if(mon){
+    a.monitoriaDescricao=mon.descricao||"";
+    a.monitoriaQtd=Math.max(0,Math.round(Number(mon.ch||0)/4));
+  }
+
+  // NDE
+  const ndeCoord=achar("Coordenação do NDE");
+  const ndeMembro=achar("Membro do NDE");
+  if(ndeCoord && Number(ndeCoord.ch||0)>0) a.nde="coordenacao";
+  else if(ndeMembro && Number(ndeMembro.ch||0)>0) a.nde="membro";
+
+  // FIEL / FIEB
+  const ff=achar("FIEL E FIEB");
+  if(ff && Number(ff.ch||0)>0){
+    const desc=ff.descricao||"";
+    if(/fiel/i.test(desc)) a.fiel=true;
+    if(/fieb|bacharel/i.test(desc)) a.fieb=true;
+    if(!a.fiel && !a.fieb) a.fiel=true;
+  }
+
+  // Todas as demais atividades da planilha ficam visíveis em "Outras atividades/comissões".
+  const tratadas=new Set([
+    "PIBIC 26/27","EXTENSÃO 2027","GRUPO DE PESQUISA","PROFSAÚDE",
+    "Orientações de TCC","Monitoria 26.2","Coordenação do NDE","Membro do NDE","FIEL E FIEB"
+  ]);
+  (item.atividades||[]).forEach(x=>{
+    if(tratadas.has(x.categoria)) return;
+    extras.push({
+      nome:x.categoria,
+      ch:Number(x.ch||0),
+      portaria:extrairNumeroAto(x.descricao||""),
+      descricao:x.descricao||"",
+      origem:"planilha27.1"
+    });
   });
 
   a.outrasComissoes.push(...extras);
+  a.chEnsinoInformadaBase=Number(item.chEnsinoInformada||0);
+  a.totalPlanilhaBase=Number(item.totalPlanilha||0);
+  a.preenchimentoStatus="validado";
   a.observacoes=[
-    a.observacoes||"",
+    (a.observacoes||"").replace(/\n?Dados institucionais pré-preenchidos.*?planilha-base\./g,"").trim(),
     "Dados institucionais pré-preenchidos a partir da aba 27.1 da planilha-base."
   ].filter(Boolean).join("\n");
 }
@@ -715,6 +804,17 @@ function aplicarBasePlanilha271(){
     syncAtividades();
   }
   return true;
+}
+
+
+function reaplicarBasePlanilha271(){
+  state.basePlanilha271Version="";
+  aplicarBasePlanilha271();
+  if(state.semestreAtivo==="2027.1"){
+    state.atividades=state.semestres["2027.1"].atividades||{};
+    syncAtividades();
+  }
+  saveState();
 }
 
 function seedData(){
@@ -1143,7 +1243,7 @@ function calcDisciplinaParaDocente(of, docenteId){
 function calcAtividadesDocente(docenteId){
   const a=state.atividades[docenteId]||{};
   const nde={none:0,membro:2,coordenacao:8}[a.nde||"none"]||0;
-  const outras=(a.outrasComissoes||[]).reduce((acc,item)=>acc+Number(item.ch||0),0);
+  const outras=(a.outrasComissoes||[]).reduce((acc,item)=>acc+(item.naoSomar?0:Number(item.ch||0)),0);
   return {
     pesquisaInstitucionalizada: Number(a.pesquisaInstitucionalizadaQtd||0)*4,
     coordProjetoPibic: Number(a.coordProjetoPibicQtd||0)*8,
@@ -2139,6 +2239,7 @@ function renderAtividades(){
       <div>
         <h2>Atividades do docente</h2>
         <div class="small">Semestre ${state.semestreAtivo}. Informe os dados-base; o sistema calcula a CH automaticamente.</div>
+        ${state.semestreAtivo==="2027.1"?`<div class="source-271">Dados vigentes importados da planilha 27.1: PIBIC, extensão, funções, portarias/atos e demais atividades.</div>`:""}
       </div>
       <div style="min-width:280px">
         <select id="sel-atividade-docente">
@@ -2216,12 +2317,16 @@ function renderAtividades(){
 
       <div class="activity-card span-wide">
         <div class="bar">
-          <div><h3>Outras comissões</h3><div class="rule">Use quando a CH não for padronizada. Informe nome, CH e portaria quando houver.</div></div>
+          <div><h3>Outras atividades / comissões</h3><div class="rule">Inclui os registros importados da planilha 27.1 e atividades sem campo padronizado específico.</div></div>
           <button data-add-comissao="${docente.id}">Adicionar comissão</button>
         </div>
         ${(a.outrasComissoes||[]).length ? (a.outrasComissoes||[]).map((item,idx)=>`
           <div class="commission-row">
-            <div><label>Comissão</label><input data-comissao-docente="${docente.id}" data-comissao-idx="${idx}" data-kind="nome" value="${item.nome||""}"></div>
+            <div>
+              <label>Atividade / comissão</label>
+              <input data-comissao-docente="${docente.id}" data-comissao-idx="${idx}" data-kind="nome" value="${item.nome||""}">
+              ${item.descricao?`<div class="small imported-desc">${item.descricao}</div>`:""}
+            </div>
             <div><label>CH</label><input type="number" min="0" data-comissao-docente="${docente.id}" data-comissao-idx="${idx}" data-kind="ch" value="${item.ch||0}"></div>
             <div><label>Portaria</label><input data-comissao-docente="${docente.id}" data-comissao-idx="${idx}" data-kind="portaria" value="${item.portaria||""}" placeholder="Nº/ano"></div>
             <div class="commission-action"><button data-del-comissao="${docente.id}" data-comissao-idx="${idx}">Remover</button></div>
@@ -2701,6 +2806,13 @@ function render(marcarAlteracao=true){
   saveState();
   if(marcarAlteracao) setCloudStatus("Alterações locais • clique em Salvar online","pending");
 }
+document.getElementById("btnApply271").onclick=()=>{
+  if(!confirm("Reaplicar os dados institucionais da aba 27.1?\n\nIsso atualizará funções, CH de função, PIBIC, extensão, portarias/atos e demais atividades importadas, preservando os dados manuais que não vieram da planilha.")) return;
+  reaplicarBasePlanilha271();
+  render(false);
+  setCloudStatus("Base 27.1 reaplicada localmente • clique em Salvar online","pending");
+  alert("Dados da planilha 27.1 aplicados. Confira Funções, Atividades e Portarias. Depois clique em Salvar online.");
+};
 document.getElementById("btnSeed").onclick=()=>{ 
   if(!confirm("Carregar exemplo reinicia os dados locais do sistema. Deseja continuar?")) return;
   seedData();

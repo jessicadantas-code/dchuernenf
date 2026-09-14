@@ -418,3 +418,29 @@ button.primary,#xlsx-geral{font-weight:700}
 .mini-version{
   font-size:.68rem;background:#0b6b3a;color:#fff;border-radius:999px;padding:.2rem .45rem;vertical-align:middle
 }
+
+.apply271-btn{
+  font-weight:800;
+  border:1px solid #0b6b3a;
+  background:#eaf6ee;
+  color:#0b5a31;
+}
+.apply271-fixed{position:fixed;right:12px;bottom:12px;z-index:9999}
+.source-271{
+  margin-top:.4rem;
+  padding:.45rem .65rem;
+  background:#eef7f1;
+  border:1px solid #b9dec7;
+  border-radius:8px;
+  color:#145a32;
+  font-size:.8rem;
+  font-weight:700;
+}
+.imported-desc{
+  white-space:pre-wrap;
+  line-height:1.35;
+  margin-top:.3rem;
+  padding:.35rem .45rem;
+  background:#f7f8fa;
+  border-radius:6px;
+}

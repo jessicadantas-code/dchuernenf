@@ -248,3 +248,19 @@ Verificação visual após publicação:
 2. Na Grade semanal devem aparecer os botões `Baixar grade como imagem (PNG)` e `Baixar grade como PDF`.
 3. No Relatório geral deve aparecer `BAIXAR RELATÓRIO GERAL EM EXCEL`.
 4. A migração da planilha 27.1 é executada novamente com a chave `planilha-27.1-v16-corrigida`.
+
+
+## v17 — correção do preenchimento da base 27.1
+
+Esta versão corrige a migração dos dados institucionais da planilha.
+
+### Corrigido
+- Função e CH de função são aplicadas diretamente à ficha do docente.
+- PIBIC 26/27 é preenchido no campo de PIBIC usando a CH informada na planilha.
+- Extensão 2027 é preenchida nos campos de coordenação/membro e mantém a descrição integral como registro de auditoria.
+- Portarias/atos presentes nas funções e nas atividades são cadastrados na ficha do docente.
+- As demais atividades da planilha ficam visíveis em `Outras atividades / comissões`.
+- Registros-fonte de PIBIC e Extensão são mantidos para conferência, sem dupla contagem da CH.
+- Botão `Aplicar/atualizar dados da planilha 27.1` permite forçar a importação a qualquer momento.
+
+Depois de conferir os dados importados, clique em `Salvar online` para publicar a base atualizada no n8n.
