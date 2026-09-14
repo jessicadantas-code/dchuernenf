@@ -29,7 +29,7 @@
       <button id="btnSeed">Carregar exemplo</button>
       <button id="btnReset" class="danger">Limpar tudo</button>
     </div>
-  </header>
+  <div class="version-badge">V16 CORRIGIDA • 27.1</div><div class="base-badge">Base institucional 27.1 carregada</div></header>
 
   <div class="online-notice">
     <strong>Modo compartilhado:</strong> ao abrir, o sistema busca a versão do n8n. 
@@ -549,7 +549,7 @@ function renderSemesterBar(){
 }
 
 
-const BASE_PLANILHA_271_VERSION="planilha-27.1-v16";
+const BASE_PLANILHA_271_VERSION="planilha-27.1-v16-corrigida";
 
 function normalizaNome(txt){
   return String(txt||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
@@ -2419,7 +2419,11 @@ function renderGrade(){
   const panel=document.getElementById("panel-grade");
   const filtered=state.horarios.filter(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); if(!of || isEspecialIndividual(of)) return false; if(state.gradeFilters.view==="turma") return !state.gradeFilters.turma || of.periodo===state.gradeFilters.turma; return !state.gradeFilters.docente || (of.docentes||[]).includes(state.gradeFilters.docente); });
   panel.innerHTML=`<div class="bar"><h2>Grade semanal</h2><div class="filters"><div><label>Visualizar por</label><select id="grade-view"><option value="turma" ${state.gradeFilters.view==="turma"?"selected":""}>Turma</option><option value="docente" ${state.gradeFilters.view==="docente"?"selected":""}>Docente</option></select></div><div id="grade-wrap-turma" style="display:${state.gradeFilters.view==="turma"?"block":"none"}"><label>Turma</label><select id="grade-turma"><option value="">Todas</option>${[...new Set(state.oferta.map(o=>o.periodo).filter(Boolean))].map(periodo=>`<option value="${periodo}" ${state.gradeFilters.turma===periodo?"selected":""}>${periodo}</option>`).join("")}</select></div><div id="grade-wrap-docente" style="display:${state.gradeFilters.view==="docente"?"block":"none"}"><label>Docente</label><select id="grade-docente"><option value="">Todos</option>${state.docentes.map(doc=>`<option value="${doc.id}" ${state.gradeFilters.docente===doc.id?"selected":""}>${doc.nome||"(sem nome)"}</option>`).join("")}</select></div></div></div>
-  <div class="card" id="grade-export-area"><div class="grade-export-title"><strong>UERN — Enfermagem Caicó</strong><br>Grade semanal — ${state.semestreAtivo}</div><table class="grade-table"><thead><tr><th>Turno / Bloco</th>${dias.map(d=>`<th>${d}</th>`).join("")}</tr></thead><tbody>
+  <div class="inline-actions grade-export-actions">
+    <button id="grade-png" class="primary">Baixar grade como imagem (PNG)</button>
+    <button id="grade-pdf">Baixar grade como PDF</button>
+  </div>
+  <div class="card" id="grade-export-area"><div class="grade-export-title"><strong>UERN — Enfermagem Caicó</strong><br>Grade semanal — ${state.semestreAtivo}<br><span class="small">${state.gradeFilters.view==="docente" ? (state.gradeFilters.docente ? "Docente: "+docenteNome(state.gradeFilters.docente) : "Todos os docentes") : (state.gradeFilters.turma ? "Turma: "+state.gradeFilters.turma : "Todas as turmas")}</span></div><table class="grade-table"><thead><tr><th>Turno / Bloco</th>${dias.map(d=>`<th>${d}</th>`).join("")}</tr></thead><tbody>
   ${Object.entries(blocosPorTurno).map(([turno,blocos])=>blocos.map(bloco=>`<tr><th>${turno} • ${bloco.numero}<br><span class="small">${bloco.faixa}</span></th>${dias.map(dia=>{ const hits=filtered.filter(h=>{ if(h.dia!==dia||h.turno!==turno) return false; const ini=Number(h.blocoInicial), fim=ini+Number(h.qtdBlocos)-1; return bloco.numero>=ini && bloco.numero<=fim; }); return `<td class="grade-cell">${hits.map(h=>{ const of=state.oferta.find(o=>o.id===h.ofertaId); const docs=(of?.docentes||[]).map(docenteNome).filter(Boolean).join(", "); return `<div class="slot-card"><div class="slot-title">${of?.nome||""}</div><div class="slot-sub">${of?.periodo||""}</div><div class="slot-sub">${docs}</div></div>`; }).join("")}</td>`; }).join("")}</tr>`).join("")).join("")}
   </tbody></table></div>`;
   panel.querySelector("#grade-view").onchange=e=>{ state.gradeFilters.view=e.target.value; render(); };
@@ -2498,7 +2502,7 @@ function renderRelatorios(){
         <div class="small">A entrega institucional principal agora é em Excel, com abas de resumo, disciplinas/CH teórica-prática, atividades, portarias e base 27.1.</div>
       </div>
       <div class="inline-actions">
-        <button id="xlsx-geral" class="primary">Baixar relatório geral (Excel)</button>
+        <div class="excel-notice"><strong>Entrega principal: Excel (.xlsx)</strong> — contém Resumo DCH, Disciplinas CH T-P, Atividades, Portarias e Base 27.1.</div><button id="xlsx-geral" class="primary excel-main-btn">BAIXAR RELATÓRIO GERAL EM EXCEL</button>
         <button id="csv-geral">CSV de apoio</button>
       </div>
     </div>

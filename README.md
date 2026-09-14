@@ -238,3 +238,13 @@ Regra consolidada com a coordenação:
 - A entrega geral principal passa a ser `Excel (.xlsx)`.
 - Abas: `Resumo DCH`, `Disciplinas CH T-P`, `Atividades`, `Portarias` e `Base planilha 27.1`.
 - A aba `Disciplinas CH T-P` detalha CH teórica, prática, orientação, valores semanais, módulos, supervisão de estágio e regência.
+
+
+## V16 CORRIGIDA
+Esta revisão corrige a primeira geração da v16, na qual parte do código foi incluída sem os controles visuais correspondentes.
+
+Verificação visual após publicação:
+1. Deve aparecer o selo `V16 CORRIGIDA • 27.1`.
+2. Na Grade semanal devem aparecer os botões `Baixar grade como imagem (PNG)` e `Baixar grade como PDF`.
+3. No Relatório geral deve aparecer `BAIXAR RELATÓRIO GERAL EM EXCEL`.
+4. A migração da planilha 27.1 é executada novamente com a chave `planilha-27.1-v16-corrigida`.
