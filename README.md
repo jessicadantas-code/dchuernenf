@@ -199,3 +199,23 @@ A v13 corrige isso:
 - Horários de componentes obrigatórios removidos são limpos para não gerar registros órfãos.
 
 Após publicar esta versão, abra 2027.1, confira a oferta e clique em `Salvar online` para atualizar a versão compartilhada no n8n.
+
+## v14 — regra específica de estágio
+- Estágio I: 60h teóricas + 405h orientação = 465h.
+- Estágio II: 60h teóricas + 420h orientação = 480h.
+- Para DCH, não se divide 465/480h pelo número de docentes.
+- Cada supervisor acadêmico recebe no mínimo 4h/semana.
+- O número de alunos não multiplica automaticamente a CH.
+- A coordenação pode editar para valor maior que 4h quando a organização real do estágio exigir.
+- Regência do estágio fica 0 por padrão, pois o PPC consultado não define fórmula de regência para esse caso.
+
+## v15 — DCH de Estágio Curricular Supervisionado
+Regra consolidada com a coordenação:
+- 60h do componente = 4h semanais de ensino por docente, sem divisão entre professores;
+- supervisão acadêmica = mínimo 4h semanais por docente supervisor;
+- total inicial por docente = 8h semanais;
+- a supervisão pode ser aumentada manualmente, se necessário;
+- regência automática = 0h;
+- as 4h de ensino entram em Sala de Aula/Ensino;
+- as 4h de supervisão entram em categoria própria `Supervisão de estágio`;
+- o total geral da DCH soma ambas.

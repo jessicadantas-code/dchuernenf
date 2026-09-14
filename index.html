@@ -125,6 +125,21 @@ function weeklyHours(ch){
 }
 function blocksFromHours(total,weeks=15){ return roundInt(weeklyHours(total)); }
 function isUCE(of){ return (of.codigo||"").startsWith("UCE") || (of.nome||"").toUpperCase().includes("UCE"); }
+
+function isEstagio(of){
+  return !!(of && (of.tipologia==="estagio" || ["CAC0065","CAC0067"].includes(String(of.codigo||"").trim())));
+}
+function syncEstagioSupervisores(of){
+  if(!isEstagio(of)) return;
+  if(!of.estagioSupervisao || typeof of.estagioSupervisao!=="object") of.estagioSupervisao={};
+  const ids=new Set(of.docentes||[]);
+  Object.keys(of.estagioSupervisao).forEach(id=>{ if(!ids.has(id)) delete of.estagioSupervisao[id]; });
+  (of.docentes||[]).forEach(id=>{
+    const atual=Number(of.estagioSupervisao[id]);
+    if(!Number.isFinite(atual) || atual<4) of.estagioSupervisao[id]=4;
+  });
+}
+
 function isEspecialIndividual(of){ return of.tipo==="especial" && of.especial==="individual"; }
 function docenteNome(id){ return state.docentes.find(d=>d.id===id)?.nome || ""; }
 
@@ -219,10 +234,9 @@ function fromCatalogo(comp){
     id:uid(), periodo:comp.periodo, codigo:comp.codigo, nome:comp.nome,
     teorica:comp.teorica, pratica:comp.pratica, orientacao:comp.orientacao,
     total:comp.total, tipo:comp.tipo||"obrigatoria", especial:comp.especial||"nao",
-    docentes:[],
-    praticaServico:false,
-    qtdModulosPraticos:0,
-    modulosPraticos:[]
+    tipologia:comp.tipologia||"", docentes:[],
+    praticaServico:false,qtdModulosPraticos:0,modulosPraticos:[],
+    estagioSupervisao:{}
   };
 }
 function atividadePadrao(){
@@ -339,6 +353,9 @@ function migrarCatalogoPPCCompleto(){
 function syncOfertaEstrutura(){
   (state.oferta||[]).forEach(of=>{
     if(of.praticaServico===undefined) of.praticaServico=false;
+    if(of.tipologia===undefined) of.tipologia="";
+    if(!of.tipologia && ["CAC0065","CAC0067"].includes(String(of.codigo||"").trim())) of.tipologia="estagio";
+    if(of.estagioSupervisao===undefined) of.estagioSupervisao={};
     if(of.qtdModulosPraticos===undefined) of.qtdModulosPraticos=0;
     if(!Array.isArray(of.modulosPraticos)) of.modulosPraticos=[];
     of.modulosPraticos.forEach((m,idx)=>{
@@ -348,6 +365,7 @@ function syncOfertaEstrutura(){
       if(m.docenteId===undefined) m.docenteId="";
       if(m.local===undefined) m.local="";
     });
+    syncEstagioSupervisores(of);
   });
 }
 
@@ -895,13 +913,29 @@ function addPeriodoFromCatalogo(periodo){
 }
 function calcBlocosNecessarios(of){
   if(isEspecialIndividual(of)) return 0;
+  if(isEstagio(of)) return 4;
   if(isUCE(of)) return 1;
   const chTotal=Number(of.total||0) || (Number(of.teorica||0)+Number(of.pratica||0)+Number(of.orientacao||0));
   return Math.round(chTotal / SEMANAS_SEMESTRE);
 }
 function calcDisciplinaParaDocente(of, docenteId){
-  if(!(of.docentes||[]).includes(docenteId)) return {sala:0, regencia:0, teoricaSemanal:0, praticaSemanal:0, modulos:0};
-  if(isUCE(of)) return {sala:1, regencia:0, teoricaSemanal:0, praticaSemanal:0, modulos:0};
+  if(!(of.docentes||[]).includes(docenteId)) return {sala:0, regencia:0, teoricaSemanal:0, praticaSemanal:0, modulos:0, estagioSupervisao:0};
+  if(isEstagio(of)){
+    syncEstagioSupervisores(of);
+    const ensinoComponente=weeklyHours(60);
+    const supervisao=Math.max(4,Number(of.estagioSupervisao?.[docenteId]||4));
+    return {
+      sala:roundInt(ensinoComponente),
+      regencia:0,
+      teoricaSemanal:ensinoComponente,
+      praticaSemanal:0,
+      modulos:0,
+      estagioSupervisao:supervisao,
+      estagioEnsino:ensinoComponente,
+      estagioTotal:roundInt(ensinoComponente+supervisao)
+    };
+  }
+  if(isUCE(of)) return {sala:1, regencia:0, teoricaSemanal:0, praticaSemanal:0, modulos:0, estagioSupervisao:0};
 
   const n=(of.docentes||[]).length || 1;
   const multiplicador=isEspecialIndividual(of) ? 0.5 : 1;
@@ -956,7 +990,7 @@ function calcAtividadesDocente(docenteId){
   };
 }
 function calcResumoDocente(docente){
-  let sala=0, regencia=0;
+  let sala=0, regencia=0, estagioSupervisao=0;
   state.oferta.forEach(of=>{ const c=calcDisciplinaParaDocente(of, docente.id); sala+=c.sala; regencia+=c.regencia; });
   const acts=calcAtividadesDocente(docente.id);
   return {
@@ -1007,6 +1041,7 @@ function disciplinasTextoDocente(docenteId){
     .map(of=>{
       const c=calcDisciplinaParaDocente(of,docenteId);
       let detalhe=`${of.codigo||""} ${of.nome||""}`.trim();
+      if(isEstagio(of)) return `${detalhe} — ensino do componente: ${c.estagioEnsino||4}h/sem | supervisão acadêmica: ${c.estagioSupervisao||4}h/sem | total: ${c.estagioTotal||8}h/sem | regência: 0h`;
       if(isUCE(of)) return `${detalhe} — UCE: 1h`;
       const partes=[];
       if(Number(of.teorica||0)>0) partes.push(`T ${c.teoricaSemanal.toFixed(2)}h/sem`);
@@ -1063,6 +1098,7 @@ function dadosRelatorioGeral(){
       regencia:r.regencia,
       funcao:[doc.funcao||"",funcPort].filter(Boolean).join(" — "),
       chFuncao:Number(doc.chFuncao||0),
+      chEstagioSupervisao:Number(r.estagioSupervisao||0),
       pesquisa:at.pesquisaDescricao||"",
       chPesquisa:ac.pesquisaInstitucionalizada,
       pibic:at.pibicDescricao||"",
@@ -1096,7 +1132,7 @@ function dadosRelatorioGeral(){
 function cabecalhoRelatorioGeral(){
   return [
     "Nome completo","Matrícula","CPF","Regime",
-    "Disciplinas / memória de cálculo","CH ensino","Regência",
+    "Disciplinas / memória de cálculo","CH ensino","Supervisão estágio","Regência",
     "Função/atividade + portaria","CH função",
     "Pesquisa institucionalizada","CH pesquisa",
     "PIBIC / coordenação de projeto","CH PIBIC",
@@ -1116,7 +1152,7 @@ function cabecalhoRelatorioGeral(){
 
 function linhaRelatorioGeral(d){
   return [
-    d.nome,d.matricula,d.cpf,d.regime,d.disciplinas,d.chEnsino,d.regencia,
+    d.nome,d.matricula,d.cpf,d.regime,d.disciplinas,d.chEnsino,d.chEstagioSupervisao||0,d.regencia,
     d.funcao,d.chFuncao,d.pesquisa,d.chPesquisa,d.pibic,d.chPibic,
     d.extensao,d.chExtensao,d.monitoria,d.chMonitoria,d.tcc,d.chTcc,
     d.mestrado,d.chMestrado,d.grupo,d.chGrupo,d.nde,d.chNde,d.fielFieb,
@@ -1314,6 +1350,17 @@ function gerarPdfRelatorioGeral(dados){
 function memoriaCalculoEnsino(){
   const linhas=[];
   state.oferta.forEach(of=>{
+    if(isEstagio(of)){
+      (of.docentes||[]).forEach(docenteId=>{
+        const c=calcDisciplinaParaDocente(of,docenteId);
+        linhas.push({periodo:of.periodo,codigo:of.codigo,disciplina:of.nome,docente:docenteNome(docenteId),
+          chT:Number(of.teorica||0),chP:Number(of.pratica||0),nDoc:(of.docentes||[]).length,
+          teoriaDoc:c.estagioEnsino||4,praticaDoc:c.estagioSupervisao||4,modulo:"Ensino + supervisão acadêmica",
+          sala:c.sala,regencia:0,tipoPratica:"Estágio supervisionado",
+          estagioSupervisao:c.estagioSupervisao||4,estagioTotal:c.estagioTotal||8});
+      });
+      return;
+    }
     if(isUCE(of)){
       (of.docentes||[]).forEach(docenteId=>{
         linhas.push({
@@ -1621,6 +1668,22 @@ function renderOferta(){
           <label><strong>Docentes do componente</strong></label>
           ${renderChoiceWrap(i, oferta.docentes||[])}
         </div>
+        ${isEstagio(oferta) ? `
+        <div class="stage-box">
+          <h4>Supervisão acadêmica do estágio</h4>
+          <div class="small">Regra adotada: 4h/semana de ensino referente às 60h do componente + mínimo de 4h/semana de supervisão acadêmica. Total inicial: 8h/semana por docente supervisor. Sem regência automática.</div>
+          ${(oferta.docentes||[]).map(id=>`
+            <div class="stage-row-v15">
+              <span><strong>${docenteNome(id)}</strong></span>
+              <span class="stage-fixed">Ensino: <strong>4h/sem</strong></span>
+              <span class="stage-supervision">
+                Supervisão:
+                <input type="number" min="4" step="1" data-estagio-ch="${i}" data-doc-id="${id}" value="${Math.max(4,Number(oferta.estagioSupervisao?.[id]||4))}">
+                <span class="small">h/sem</span>
+              </span>
+              <span class="stage-total">Total: <strong>${4+Math.max(4,Number(oferta.estagioSupervisao?.[id]||4))}h/sem</strong></span>
+            </div>`).join("")}
+        </div>` : ""}
 
         ${Number(oferta.pratica||0)>0 && !isUCE(oferta) ? `
         <div class="service-practice-box">
@@ -1708,6 +1771,7 @@ function renderOferta(){
       if(!of.qtdModulosPraticos || of.qtdModulosPraticos===0) of.qtdModulosPraticos=of.docentes.length;
       ajustarModulosPraticos(of);
     }
+    if(isEstagio(of)) syncEstagioSupervisores(of);
     render();
   });
 
@@ -1732,6 +1796,16 @@ function renderOferta(){
     const oi=Number(el.dataset.modulo), mi=Number(el.dataset.mi);
     const of=state.oferta[oi], m=of.modulosPraticos[mi];
     m[el.dataset.mf]=el.value;
+    render();
+  });
+
+  panel.querySelectorAll("[data-estagio-ch]").forEach(el=>el.onchange=()=>{
+    const oi=Number(el.dataset.estagioCh), docenteId=el.dataset.docId, of=state.oferta[oi];
+    if(!of) return;
+    syncEstagioSupervisores(of);
+    let valor=Number(el.value||4);
+    if(valor<4){ alert("O PPC estabelece mínimo de 4h semanais por docente supervisor."); valor=4; }
+    of.estagioSupervisao[docenteId]=valor;
     render();
   });
 
@@ -2124,6 +2198,7 @@ function renderRelatorios(){
             <td><strong>${d.nome}</strong><div class="small">${d.matricula||""}${d.regime?` • ${d.regime}`:""}</div></td>
             <td>${d.disciplinas||"—"}</td>
             <td><strong>${d.chEnsino}</strong></td>
+            <td>${d.chEstagioSupervisao||0}</td>
             <td>${d.regencia}</td>
             <td>${d.funcao||"—"}</td>
             <td>${d.chFuncao}</td>
@@ -2198,8 +2273,8 @@ function renderRelatorios(){
       </div>
     </div>
     ${resumoDocente?`
-      <table><thead><tr><th>Docente</th><th>Sala</th><th>Regência</th><th>Função</th><th>Monitoria</th><th>Pesquisa</th><th>Coord. PIBIC</th><th>Extensão</th><th>Orient. TCC</th><th>Orient. Mestrado</th><th>Comissões</th><th>Total</th></tr></thead>
-      <tbody><tr><td>${resumoDocente.nome}</td><td>${resumoDocente.sala}</td><td>${resumoDocente.regencia}</td><td>${Number(state.docentes.find(d=>d.id===resumoDocente.id)?.chFuncao||0)}</td><td>${resumoDocente.monitoria}</td><td>${resumoDocente.pesquisaInstitucionalizada+resumoDocente.grupoPesquisa}</td><td>${resumoDocente.coordProjetoPibic}</td><td>${resumoDocente.extensao}</td><td>${resumoDocente.orientTcc}</td><td>${resumoDocente.orientMestrado}</td><td>${resumoDocente.comissoes}</td><td>${resumoDocente.total}</td></tr></tbody></table>
+      <table><thead><tr><th>Docente</th><th>Sala</th><th>Superv. estágio</th><th>Regência</th><th>Função</th><th>Monitoria</th><th>Pesquisa</th><th>Coord. PIBIC</th><th>Extensão</th><th>Orient. TCC</th><th>Orient. Mestrado</th><th>Comissões</th><th>Total</th></tr></thead>
+      <tbody><tr><td>${resumoDocente.nome}</td><td>${resumoDocente.sala}</td><td>${resumoDocente.estagioSupervisao||0}</td><td>${resumoDocente.regencia}</td><td>${Number(state.docentes.find(d=>d.id===resumoDocente.id)?.chFuncao||0)}</td><td>${resumoDocente.monitoria}</td><td>${resumoDocente.pesquisaInstitucionalizada+resumoDocente.grupoPesquisa}</td><td>${resumoDocente.coordProjetoPibic}</td><td>${resumoDocente.extensao}</td><td>${resumoDocente.orientTcc}</td><td>${resumoDocente.orientMestrado}</td><td>${resumoDocente.comissoes}</td><td>${resumoDocente.total}</td></tr></tbody></table>
 
       <div class="card" style="margin-top:.8rem">
         <div class="bar"><h4>Atividades e portarias</h4></div>
@@ -2216,8 +2291,8 @@ function renderRelatorios(){
     <div class="bar"><h3>Quadro resumo de todos os docentes</h3>
       <div class="inline-actions"><button id="csv-todos">CSV</button><button id="pdf-todos">PDF</button></div>
     </div>
-    <table><thead><tr><th>Docente</th><th>Sala</th><th>Regência</th><th>Função</th><th>Monitoria</th><th>Pesquisa</th><th>Coord. PIBIC</th><th>Extensão</th><th>Orientações</th><th>Comissões</th><th>Total</th></tr></thead>
-    <tbody>${resumos.map(r=>`<tr><td>${r.nome}</td><td>${r.sala}</td><td>${r.regencia}</td><td>${Number(state.docentes.find(d=>d.id===r.id)?.chFuncao||0)}</td><td>${r.monitoria}</td><td>${r.pesquisaInstitucionalizada+r.grupoPesquisa}</td><td>${r.coordProjetoPibic}</td><td>${r.extensao}</td><td>${r.orientTcc+r.orientMestrado}</td><td>${r.comissoes}</td><td>${r.total}</td></tr>`).join("")}</tbody></table>
+    <table><thead><tr><th>Docente</th><th>Sala</th><th>Superv. estágio</th><th>Regência</th><th>Função</th><th>Monitoria</th><th>Pesquisa</th><th>Coord. PIBIC</th><th>Extensão</th><th>Orientações</th><th>Comissões</th><th>Total</th></tr></thead>
+    <tbody>${resumos.map(r=>`<tr><td>${r.nome}</td><td>${r.sala}</td><td>${r.estagioSupervisao||0}</td><td>${r.regencia}</td><td>${Number(state.docentes.find(d=>d.id===r.id)?.chFuncao||0)}</td><td>${r.monitoria}</td><td>${r.pesquisaInstitucionalizada+r.grupoPesquisa}</td><td>${r.coordProjetoPibic}</td><td>${r.extensao}</td><td>${r.orientTcc+r.orientMestrado}</td><td>${r.comissoes}</td><td>${r.total}</td></tr>`).join("")}</tbody></table>
   </div>
 
   <div class="card" style="margin-bottom:.8rem">
