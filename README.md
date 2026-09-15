@@ -264,3 +264,15 @@ Esta versão corrige a migração dos dados institucionais da planilha.
 - Botão `Aplicar/atualizar dados da planilha 27.1` permite forçar a importação a qualquer momento.
 
 Depois de conferir os dados importados, clique em `Salvar online` para publicar a base atualizada no n8n.
+
+
+## v19 — Base organizada
+
+- remove linhas extras de auditoria que duplicavam PIBIC e Extensão;
+- PIBIC fica somente no campo oficial PIBIC;
+- Extensão fica somente nos campos de coordenação/membro, sem repetição do mesmo registro;
+- portarias são deduplicadas pelo número do ato; quando há versões repetidas, fica a ficha mais completa;
+- nomes e matrículas são atualizados conforme a primeira aba do arquivo mais recente;
+- nomes/vínculos históricos não são apagados automaticamente;
+- botão `Organizar/atualizar base 27.1` força a limpeza e atualização novamente;
+- após conferir a base, usar `Salvar online` para tornar a versão organizada a compartilhada.
