@@ -30,7 +30,7 @@
       <button id="btnSeed">Carregar exemplo</button>
       <button id="btnReset" class="danger">Limpar tudo</button>
     </div>
-  <div class="version-badge">V19 • BASE ORGANIZADA</div><div class="base-badge">Base 27.1 organizada • sem duplicidade de PIBIC/Extensão/Portarias</div></header>
+  <div class="version-badge">V20 • NOVAS REGRAS DCH</div><div class="base-badge">Base 27.1 organizada • sem duplicidade de PIBIC/Extensão/Portarias</div></header>
 
   <div class="online-notice">
     <strong>Modo compartilhado:</strong> ao abrir, o sistema busca a versão do n8n. 
@@ -125,6 +125,12 @@ const state = {
 };
 
 function uid(){ return Math.random().toString(36).slice(2,10); }
+function formatCH(v){
+  const n=Number(v||0);
+  return n.toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:2});
+}
+function ch2(v){ return Number(Number(v||0).toFixed(2)); }
+
 function roundInt(v){ return Math.round(Number(v||0)); }
 const SEMANAS_SEMESTRE = 15;
 function weeklyHours(ch){
@@ -132,6 +138,10 @@ function weeklyHours(ch){
 }
 function blocksFromHours(total,weeks=15){ return roundInt(weeklyHours(total)); }
 function isUCE(of){ return (of.codigo||"").startsWith("UCE") || (of.nome||"").toUpperCase().includes("UCE"); }
+
+function isMonografia(of){
+  return !!(of && (String(of.codigo||"").trim()==="CAC0066" || /monografia/i.test(String(of.nome||""))));
+}
 
 function isEstagio(of){
   return !!(of && (of.tipologia==="estagio" || ["CAC0065","CAC0067"].includes(String(of.codigo||"").trim())));
@@ -243,7 +253,7 @@ function fromCatalogo(comp){
     total:comp.total, tipo:comp.tipo||"obrigatoria", especial:comp.especial||"nao",
     tipologia:comp.tipologia||"", docentes:[],
     praticaServico:false,qtdModulosPraticos:0,modulosPraticos:[],
-    estagioSupervisao:{}
+    estagioSupervisao:{},coordenadorDocenteId:""
   };
 }
 function atividadePadrao(){
@@ -257,7 +267,7 @@ function atividadePadrao(){
     pesquisaDescricao:"", pibicDescricao:"", monitoriaDescricao:"",
     extensaoCoordDescricao:"", extensaoMembroDescricao:"",
     grupoPesquisaNome:"", tccDescricao:"", mestradoDescricao:"",
-    preenchimentoStatus:"rascunho"
+    preenchimentoStatus:"rascunho", ecsSupervisaoAlunos:[]
   };
 }
 function syncAtividades(){
@@ -272,6 +282,7 @@ function syncAtividades(){
     const camposTexto=["pesquisaDescricao","pibicDescricao","monitoriaDescricao","extensaoCoordDescricao","extensaoMembroDescricao","grupoPesquisaNome","tccDescricao","mestradoDescricao"];
     camposTexto.forEach(c=>{ if(typeof a[c]!=="string") a[c]=""; });
     if(!a.preenchimentoStatus) a.preenchimentoStatus="rascunho";
+    if(!Array.isArray(a.ecsSupervisaoAlunos)) a.ecsSupervisaoAlunos=[];
     if(docente.matricula===undefined) docente.matricula="";
     if(docente.cpf===undefined) docente.cpf="";
     if(docente.titulacao===undefined) docente.titulacao="";
@@ -363,6 +374,7 @@ function syncOfertaEstrutura(){
     if(of.tipologia===undefined) of.tipologia="";
     if(!of.tipologia && ["CAC0065","CAC0067"].includes(String(of.codigo||"").trim())) of.tipologia="estagio";
     if(of.estagioSupervisao===undefined) of.estagioSupervisao={};
+    if(of.coordenadorDocenteId===undefined) of.coordenadorDocenteId="";
     if(of.qtdModulosPraticos===undefined) of.qtdModulosPraticos=0;
     if(!Array.isArray(of.modulosPraticos)) of.modulosPraticos=[];
     of.modulosPraticos.forEach((m,idx)=>{
@@ -1266,54 +1278,45 @@ function calcBlocosNecessarios(of){
   return Math.round(chTotal / SEMANAS_SEMESTRE);
 }
 function calcDisciplinaParaDocente(of, docenteId){
-  if(!(of.docentes||[]).includes(docenteId)) return {sala:0, regencia:0, teoricaSemanal:0, praticaSemanal:0, modulos:0, estagioSupervisao:0};
+  if(!(of.docentes||[]).includes(docenteId)) return {sala:0,regencia:0,teoricaSemanal:0,praticaSemanal:0,orientacaoSemanal:0,modulos:0,estagioSupervisao:0};
+
   if(isEstagio(of)){
-    syncEstagioSupervisores(of);
-    const ensinoComponente=weeklyHours(60);
-    const supervisao=Math.max(4,Number(of.estagioSupervisao?.[docenteId]||4));
-    return {
-      sala:roundInt(ensinoComponente),
-      regencia:0,
-      teoricaSemanal:ensinoComponente,
-      praticaSemanal:0,
-      modulos:0,
-      estagioSupervisao:supervisao,
-      estagioEnsino:ensinoComponente,
-      estagioTotal:roundInt(ensinoComponente+supervisao)
-    };
+    const teoria=weeklyHours(60);
+    return {sala:teoria,regencia:0,teoricaSemanal:teoria,praticaSemanal:0,orientacaoSemanal:0,modulos:0,estagioSupervisao:0,estagioEnsino:teoria,estagioTotal:teoria};
   }
-  if(isUCE(of)) return {sala:1, regencia:0, teoricaSemanal:0, praticaSemanal:0, modulos:0, estagioSupervisao:0};
+
+  if(isUCE(of)) return {sala:1,regencia:0,teoricaSemanal:0,praticaSemanal:0,orientacaoSemanal:0,modulos:0,estagioSupervisao:0};
 
   const n=(of.docentes||[]).length || 1;
   const multiplicador=isEspecialIndividual(of) ? 0.5 : 1;
-  const teoricaSemanal=(weeklyHours(of.teorica)/n)*multiplicador;
 
-  let praticaSemanal=0;
-  let modulos=0;
+  if(isMonografia(of)){
+    const t=(weeklyHours(of.teorica||0)/n)*multiplicador;
+    return {sala:t,regencia:t,teoricaSemanal:t,praticaSemanal:0,orientacaoSemanal:0,modulos:0,estagioSupervisao:0};
+  }
 
+  const teoricaSemanal=(weeklyHours(of.teorica||0)/n)*multiplicador;
+  let praticaSemanal=0, modulos=0;
   if(of.praticaServico){
     const mods=modulosDoDocente(of,docenteId);
     modulos=mods.length;
-    praticaSemanal=weeklyHours(of.pratica)*modulos*multiplicador;
+    praticaSemanal=weeklyHours(of.pratica||0)*modulos*multiplicador;
   }else{
-    // Mantém a regra já validada nas versões anteriores:
-    // a CH prática do componente é integral para cada docente participante.
-    praticaSemanal=weeklyHours(of.pratica)*multiplicador;
+    praticaSemanal=weeklyHours(of.pratica||0)*multiplicador;
   }
-
   return {
-    sala: roundInt(teoricaSemanal + praticaSemanal),
-    regencia: roundInt(teoricaSemanal + (praticaSemanal * 0.5)),
-    teoricaSemanal,
-    praticaSemanal,
-    modulos
+    sala:teoricaSemanal+praticaSemanal,
+    regencia:teoricaSemanal+(praticaSemanal*0.5),
+    teoricaSemanal,praticaSemanal,orientacaoSemanal:0,modulos,estagioSupervisao:0
   };
 }
 function calcAtividadesDocente(docenteId){
   const a=state.atividades[docenteId]||{};
   const nde={none:0,membro:2,coordenacao:8}[a.nde||"none"]||0;
+  const supervisaoEcs=Math.min(6,(a.ecsSupervisaoAlunos||[]).filter(x=>String(x||"").trim()).length)*2;
   const outras=(a.outrasComissoes||[]).reduce((acc,item)=>acc+(item.naoSomar?0:Number(item.ch||0)),0);
   return {
+    supervisaoEcs,
     pesquisaInstitucionalizada: Number(a.pesquisaInstitucionalizadaQtd||0)*4,
     coordProjetoPibic: Number(a.coordProjetoPibicQtd||0)*8,
     monitoria: Number(a.monitoriaQtd||0)*4,
@@ -1337,23 +1340,27 @@ function calcAtividadesDocente(docenteId){
   };
 }
 function calcResumoDocente(docente){
-  let sala=0, regencia=0, estagioSupervisao=0;
+  let sala=0, regencia=0;
   state.oferta.forEach(of=>{
     const c=calcDisciplinaParaDocente(of, docente.id);
-    sala+=c.sala; regencia+=c.regencia;
-    if(isEstagio(of)) estagioSupervisao+=Number(c.estagioSupervisao||0);
+    sala+=Number(c.sala||0);
+    regencia+=Number(c.regencia||0);
   });
   const acts=calcAtividadesDocente(docente.id);
+  const estagioSupervisao=Number(acts.supervisaoEcs||0);
   return {
-    sala:roundInt(sala), estagioSupervisao:roundInt(estagioSupervisao), regencia:roundInt(regencia),
-    monitoria:roundInt(acts.monitoria),
-    pesquisaInstitucionalizada:roundInt(acts.pesquisaInstitucionalizada), grupoPesquisa:roundInt(acts.grupoPesquisa),
-    coordProjetoPibic:roundInt(acts.coordProjetoPibic), extensao:roundInt(acts.extensao),
-    orientTcc:roundInt(acts.orientTcc), orientMestrado:roundInt(acts.orientMestrado),
-    comissoes:roundInt(acts.comissoes),
-    total:roundInt(sala+estagioSupervisao+regencia+acts.monitoria+acts.pesquisaInstitucionalizada+
-      acts.grupoPesquisa+acts.coordProjetoPibic+acts.extensao+acts.orientTcc+
-      acts.orientMestrado+acts.comissoes+Number(docente.chFuncao||0)),
+    sala,estagioSupervisao,regencia,
+    monitoria:Number(acts.monitoria||0),
+    pesquisaInstitucionalizada:Number(acts.pesquisaInstitucionalizada||0),
+    grupoPesquisa:Number(acts.grupoPesquisa||0),
+    coordProjetoPibic:Number(acts.coordProjetoPibic||0),
+    extensao:Number(acts.extensao||0),
+    orientTcc:Number(acts.orientTcc||0),
+    orientMestrado:Number(acts.orientMestrado||0),
+    comissoes:Number(acts.comissoes||0),
+    total:sala+estagioSupervisao+regencia+Number(acts.monitoria||0)+Number(acts.pesquisaInstitucionalizada||0)+
+      Number(acts.grupoPesquisa||0)+Number(acts.coordProjetoPibic||0)+Number(acts.extensao||0)+
+      Number(acts.orientTcc||0)+Number(acts.orientMestrado||0)+Number(acts.comissoes||0)+Number(docente.chFuncao||0),
     detalhado:acts
   };
 }
@@ -1395,17 +1402,18 @@ function disciplinasTextoDocente(docenteId){
     .map(of=>{
       const c=calcDisciplinaParaDocente(of,docenteId);
       let detalhe=`${of.codigo||""} ${of.nome||""}`.trim();
-      if(isEstagio(of)) return `${detalhe} — ensino do componente: ${c.estagioEnsino||4}h/sem | supervisão acadêmica: ${c.estagioSupervisao||4}h/sem | total: ${c.estagioTotal||8}h/sem | regência: 0h`;
+      if(isEstagio(of)) return `${detalhe} — ECS: 60h teóricas integrais = ${formatCH(c.estagioEnsino||4)}h/sem por docente | supervisão dos alunos em Atividades | coord.: ${of.coordenadorDocenteId?docenteNome(of.coordenadorDocenteId):"não definido"}`;
+      if(isMonografia(of)) return `${detalhe} — somente CH teórica: ${formatCH(c.teoricaSemanal)}h/sem | orientação fora da DCH inicial | coord.: ${of.coordenadorDocenteId?docenteNome(of.coordenadorDocenteId):"não definido"}`;
       if(isUCE(of)) return `${detalhe} — UCE: 1h`;
       const partes=[];
-      if(Number(of.teorica||0)>0) partes.push(`T ${c.teoricaSemanal.toFixed(2)}h/sem`);
-      if(Number(of.pratica||0)>0) partes.push(`P ${c.praticaSemanal.toFixed(2)}h/sem`);
+      if(Number(of.teorica||0)>0) partes.push(`T ${formatCH(c.teoricaSemanal)}h/sem`);
+      if(Number(of.pratica||0)>0) partes.push(`P ${formatCH(c.praticaSemanal)}h/sem`);
       if(of.praticaServico){
         const mods=modulosDoDocente(of,docenteId);
         if(mods.length) partes.push(`módulo(s): ${mods.map(m=>m.nome||m.grupo||"prático").join(", ")}`);
       }
-      partes.push(`ensino ${c.sala}h`);
-      partes.push(`regência ${c.regencia}h`);
+      partes.push(`ensino ${formatCH(c.sala)}h`);
+      partes.push(`regência ${formatCH(c.regencia)}h`);
       return `${detalhe} — ${partes.join(" | ")}`;
     }).join("; ");
 }
@@ -1544,23 +1552,24 @@ function gerarExcelRelatorioGeral(){
     ...Array(10).fill({wch:13}),{wch:14}];
   XLSX.utils.book_append_sheet(wb,wsResumo,"Resumo DCH");
 
-  const disc=[["Docente","Período","Código","Disciplina","CH T total","CH P total","CH O total",
-    "T/docente semanal","P/docente semanal","Módulo/grupo","Ensino/sala","Supervisão estágio","Regência","Memória de cálculo"]];
+  const disc=[["Docente","Período","Código","Disciplina","Coordenador do componente","CH T total","CH P total","CH O total",
+    "T/docente semanal","P/docente semanal","Módulo/grupo","Ensino/sala","Supervisão ECS","Regência","Memória de cálculo"]];
   state.docentes.forEach(doc=>{
     state.oferta.filter(of=>(of.docentes||[]).includes(doc.id)).forEach(of=>{
       const c=calcDisciplinaParaDocente(of,doc.id);
       const mods=modulosDoDocente(of,doc.id).map(m=>[m.nome,m.grupo,m.local].filter(Boolean).join(" / ")).join("; ");
       let memoria="";
-      if(isEstagio(of)) memoria=`60h ÷ 15 = 4h ensino + ${c.estagioSupervisao||4}h supervisão = ${c.estagioTotal||8}h`;
+      if(isEstagio(of)) memoria=`ECS: 60h teóricas integrais ÷ 15 = 4h/sem para cada docente. Supervisão: 2h/aluno em Atividades (máx. 6).`;
+      else if(isMonografia(of)) memoria=`Monografia: entra somente CH teórica. CH de orientação é lançada individualmente em Atividades.`;
       else if(isUCE(of)) memoria="UCE = 1h de sala";
-      else memoria=`T: ${Number(of.teorica||0)}÷15÷${(of.docentes||[]).length||1}; P: ${Number(of.pratica||0)}÷15${of.praticaServico?" por módulo/grupo":""}`;
-      disc.push([doc.nome,of.periodo,of.codigo,of.nome,Number(of.teorica||0),Number(of.pratica||0),Number(of.orientacao||0),
-        Number(c.teoricaSemanal||0),Number(c.praticaSemanal||0),mods,c.sala,Number(c.estagioSupervisao||0),c.regencia,memoria]);
+      else memoria=`T: ${Number(of.teorica||0)}÷15÷${(of.docentes||[]).length||1}; P: ${Number(of.pratica||0)}÷15${of.praticaServico?" por módulo/grupo":""}; O: não entra inicialmente na DCH`;
+      disc.push([doc.nome,of.periodo,of.codigo,of.nome,of.coordenadorDocenteId?docenteNome(of.coordenadorDocenteId):"",Number(of.teorica||0),Number(of.pratica||0),Number(of.orientacao||0),
+        Number(c.teoricaSemanal||0),Number(c.praticaSemanal||0),mods,c.sala,Number(calcAtividadesDocente(doc.id).supervisaoEcs||0),c.regencia,memoria]);
     });
   });
   const wsDisc=XLSX.utils.aoa_to_sheet(disc);
-  wsDisc["!cols"]=[{wch:32},{wch:9},{wch:12},{wch:38},{wch:11},{wch:11},{wch:11},{wch:16},{wch:16},{wch:32},{wch:12},{wch:16},{wch:11},{wch:48}];
-  wsDisc["!autofilter"]={ref:`A1:N${disc.length}`};
+  wsDisc["!cols"]=[{wch:32},{wch:9},{wch:12},{wch:38},{wch:32},{wch:11},{wch:11},{wch:11},{wch:16},{wch:16},{wch:32},{wch:12},{wch:16},{wch:11},{wch:52}];
+  wsDisc["!autofilter"]={ref:`A1:O${disc.length}`};
   XLSX.utils.book_append_sheet(wb,wsDisc,"Disciplinas CH T-P");
 
   const atos=[["Docente","Categoria","Descrição","CH","Portaria/ato"]];
@@ -1573,6 +1582,7 @@ function gerarExcelRelatorioGeral(){
       ["Extensão — coordenação",a.extensaoCoordDescricao,Number(a.extensaoCoordenacaoQtd||0)*8],
       ["Extensão — membro",a.extensaoMembroDescricao,Number(a.extensaoMembroQtd||0)*4],
       ["Monitoria",a.monitoriaDescricao,calcAtividadesDocente(doc.id).monitoria],
+      ["Supervisão ECS",(a.ecsSupervisaoAlunos||[]).filter(x=>String(x||"").trim()).join("; "),calcAtividadesDocente(doc.id).supervisaoEcs],
       ["TCC",a.tccDescricao,calcAtividadesDocente(doc.id).orientTcc],
       ["PROFSAÚDE/Mestrado",a.mestradoDescricao,calcAtividadesDocente(doc.id).orientMestrado],
       ["Grupo de pesquisa",a.grupoPesquisaNome,calcAtividadesDocente(doc.id).grupoPesquisa]
@@ -1868,6 +1878,8 @@ function buildResumoDetalhadoTexto(docenteId){
   linhas.push(`FIEL: ${f.fiel ? "Sim (2h)" : "Não"}`);
   linhas.push(`FIEB: ${f.fieb ? "Sim (2h)" : "Não"}`);
   linhas.push(`Comitê de Ética: ${f.comiteEtica ? "Sim (8h)" : "Não"}`);
+  const ecsAlunos=(f.ecsSupervisaoAlunos||[]).filter(x=>String(x||"").trim());
+  linhas.push(`Supervisão ECS: ${ecsAlunos.length} aluno(s) = ${a.supervisaoEcs||0}h${ecsAlunos.length?` — ${ecsAlunos.join("; ")}`:""}`);
   linhas.push(detalhe(`Orientações TCC: ${a.orientTccQtd} orientando(s) = ${a.orientTcc}h`,f.tccDescricao));
   linhas.push(detalhe(`Orientações Mestrado: ${a.orientMestradoQtd} orientando(s) = ${a.orientMestrado}h`,f.mestradoDescricao));
 
@@ -2128,21 +2140,22 @@ function renderOferta(){
           <label><strong>Docentes do componente</strong></label>
           ${renderChoiceWrap(i, oferta.docentes||[])}
         </div>
+        <div class="component-coordinator">
+          <label><strong>Docente coordenador do componente</strong></label>
+          <select data-coord-componente="${i}">
+            <option value="">Selecione</option>
+            ${(oferta.docentes||[]).map(id=>`<option value="${id}" ${oferta.coordenadorDocenteId===id?"selected":""}>${docenteNome(id)}</option>`).join("")}
+          </select>
+          <div class="small">Informação de organização/socialização. Não altera a CH.</div>
+        </div>
         ${isEstagio(oferta) ? `
         <div class="stage-box">
-          <h4>Supervisão acadêmica do estágio</h4>
-          <div class="small">Regra adotada: 4h/semana de ensino referente às 60h do componente + mínimo de 4h/semana de supervisão acadêmica. Total inicial: 8h/semana por docente supervisor. Sem regência automática.</div>
-          ${(oferta.docentes||[]).map(id=>`
-            <div class="stage-row-v15">
-              <span><strong>${docenteNome(id)}</strong></span>
-              <span class="stage-fixed">Ensino: <strong>4h/sem</strong></span>
-              <span class="stage-supervision">
-                Supervisão:
-                <input type="number" min="4" step="1" data-estagio-ch="${i}" data-doc-id="${id}" value="${Math.max(4,Number(oferta.estagioSupervisao?.[id]||4))}">
-                <span class="small">h/sem</span>
-              </span>
-              <span class="stage-total">Total: <strong>${4+Math.max(4,Number(oferta.estagioSupervisao?.[id]||4))}h/sem</strong></span>
-            </div>`).join("")}
+          <h4>Estágio Curricular Supervisionado</h4>
+          <div class="small">
+            As 60h teóricas são computadas integralmente para cada docente do componente:
+            <strong>60h ÷ 15 = 4h/semana por docente</strong>.
+            A supervisão dos alunos é lançada na aba Atividades: 2h por aluno, máximo 6.
+          </div>
         </div>` : ""}
 
         ${Number(oferta.pratica||0)>0 && !isUCE(oferta) ? `
@@ -2206,7 +2219,7 @@ function renderOferta(){
   panel.querySelector("#add-oferta-manual").onclick=()=>{
     state.oferta.push({
       id:uid(),periodo:"",codigo:"",nome:"",teorica:0,pratica:0,orientacao:0,total:0,
-      tipo:"obrigatoria",especial:"nao",docentes:[],
+      tipo:"obrigatoria",especial:"nao",docentes:[],coordenadorDocenteId:"",
       praticaServico:false,qtdModulosPraticos:0,modulosPraticos:[]
     });
     render();
@@ -2226,12 +2239,23 @@ function renderOferta(){
     const id=el.dataset.docId;
     of.docentes=of.docentes||[];
     if(el.checked && !of.docentes.includes(id)) of.docentes.push(id);
-    if(!el.checked) of.docentes=of.docentes.filter(x=>x!==id);
+    if(!el.checked){
+      of.docentes=of.docentes.filter(x=>x!==id);
+      if(of.coordenadorDocenteId===id) of.coordenadorDocenteId="";
+    }
     if(of.praticaServico){
       if(!of.qtdModulosPraticos || of.qtdModulosPraticos===0) of.qtdModulosPraticos=of.docentes.length;
       ajustarModulosPraticos(of);
     }
     if(isEstagio(of)) syncEstagioSupervisores(of);
+    render();
+  });
+
+  panel.querySelectorAll("[data-coord-componente]").forEach(el=>el.onchange=()=>{
+    const of=state.oferta[Number(el.dataset.coordComponente)];
+    if(!of) return;
+    of.coordenadorDocenteId=el.value||"";
+    saveState();
     render();
   });
 
@@ -2256,16 +2280,6 @@ function renderOferta(){
     const oi=Number(el.dataset.modulo), mi=Number(el.dataset.mi);
     const of=state.oferta[oi], m=of.modulosPraticos[mi];
     m[el.dataset.mf]=el.value;
-    render();
-  });
-
-  panel.querySelectorAll("[data-estagio-ch]").forEach(el=>el.onchange=()=>{
-    const oi=Number(el.dataset.estagioCh), docenteId=el.dataset.docId, of=state.oferta[oi];
-    if(!of) return;
-    syncEstagioSupervisores(of);
-    let valor=Number(el.value||4);
-    if(valor<4){ alert("O PPC estabelece mínimo de 4h semanais por docente supervisor."); valor=4; }
-    of.estagioSupervisao[docenteId]=valor;
     render();
   });
 
@@ -2350,6 +2364,22 @@ function renderAtividades(){
     <div class="section-title"><h3>Ensino complementar e orientações</h3></div>
     <div class="activity-grid">
       ${cardNum("Monitoria","monitoriaQtd",a.monitoriaQtd,"4h por monitoria",calc.monitoria,"monitoriaDescricao","Disciplina/projeto de monitoria")}
+      <div class="activity-card span-wide ecs-supervision-box">
+        <div class="bar">
+          <div>
+            <h3>Supervisão de Estágio Curricular Supervisionado — ECS</h3>
+            <div class="rule">2h por aluno • máximo 6 alunos • máximo 12h semanais</div>
+          </div>
+          <div class="ch-preview"><span>CH calculada</span><strong>${calc.supervisaoEcs||0}h</strong></div>
+        </div>
+        <div class="student-grid">
+          ${Array.from({length:6},(_,si)=>`
+            <div>
+              <label>Aluno ${si+1}</label>
+              <input data-ecs-aluno="${si}" value="${(a.ecsSupervisaoAlunos||[])[si]||""}" placeholder="Nome do aluno">
+            </div>`).join("")}
+        </div>
+      </div>
       ${cardNum("Orientação de TCC","orientacoesTcc",a.orientacoesTcc,"2h por orientando, máximo de 4 orientandos",calc.orientTcc,"tccDescricao","Um orientando/trabalho por linha","4")}
       ${tccAviso}
       ${cardNum("Orientação de Mestrado","orientacoesMestrado",a.orientacoesMestrado,"3h por orientando",calc.orientMestrado,"mestradoDescricao","Nome(s) do(s) orientando(s)")}
@@ -2416,6 +2446,14 @@ function renderAtividades(){
   panel.querySelector("#sel-atividade-docente").onchange=e=>{ state.atividadeDocenteId=e.target.value; render(); };
   panel.querySelector("#status-preenchimento").onchange=e=>{ a.preenchimentoStatus=e.target.value; render(); };
 
+  panel.querySelectorAll("[data-ecs-aluno]").forEach(el=>el.onchange=()=>{
+    const at=state.atividades[docente.id];
+    if(!Array.isArray(at.ecsSupervisaoAlunos)) at.ecsSupervisaoAlunos=[];
+    at.ecsSupervisaoAlunos[Number(el.dataset.ecsAluno)]=el.value.trim();
+    saveState();
+    render();
+  });
+
   panel.querySelectorAll("[data-atividade]").forEach(el=>el.onchange=()=>{
     const at=state.atividades[el.dataset.atividade];
     let valor=el.type==="checkbox"?el.checked:(el.tagName==="SELECT"?el.value:Number(el.value));
@@ -2459,15 +2497,15 @@ function renderResumo(){
   const resumo=calcResumoDocente(docente), disciplinas=detalhamentoDisciplinas(docente.id), detalhadoTexto=buildResumoDetalhadoTexto(docente.id);
   panel.innerHTML=`<div class="bar"><h2>Resumo individual por docente</h2><div style="min-width:280px"><select id="sel-resumo-docente">${state.docentes.map(doc=>`<option value="${doc.id}" ${doc.id===state.resumoDocenteId?"selected":""}>${doc.nome||"(sem nome)"}</option>`).join("")}</select></div></div>
   <div class="resumo-cards">
-    <div class="resumo-card"><h3>Ensino</h3><p>Sala de aula: <strong>${resumo.sala}</strong></p><p>Regência: <strong>${resumo.regencia}</strong></p><p>Monitoria: <strong>${resumo.monitoria}</strong></p></div>
+    <div class="resumo-card"><h3>Ensino</h3><p>Sala de aula: <strong>${formatCH(resumo.sala)}</strong></p><p>Supervisão ECS: <strong>${formatCH(resumo.estagioSupervisao)}</strong></p><p>Regência: <strong>${formatCH(resumo.regencia)}</strong></p><p>Monitoria: <strong>${formatCH(resumo.monitoria)}</strong></p></div>
     <div class="resumo-card"><h3>Pesquisa</h3><p>Pesquisa institucionalizada: <strong>${resumo.pesquisaInstitucionalizada}</strong></p><p>Grupo de pesquisa: <strong>${resumo.grupoPesquisa}</strong></p><p>Coord. PIBIC: <strong>${resumo.coordProjetoPibic}</strong></p></div>
     <div class="resumo-card"><h3>Extensão</h3><p><strong>${resumo.extensao}</strong></p></div>
     <div class="resumo-card"><h3>Orientações</h3><p>TCC: <strong>${resumo.orientTcc}</strong></p><p>Mestrado: <strong>${resumo.orientMestrado}</strong></p></div>
     <div class="resumo-card"><h3>Comissões</h3><p><strong>${resumo.comissoes}</strong></p></div>
-    <div class="resumo-card destaque"><h3>Total</h3><p><strong>${resumo.total}</strong></p></div>
+    <div class="resumo-card destaque"><h3>Total</h3><p><strong>${formatCH(resumo.total)}</strong></p></div>
   </div>
   <div class="card" style="margin-top:1rem"><div class="bar"><h3>Detalhamento das atividades</h3></div><ul class="detail-list">${detalhadoTexto.map(txt=>`<li>${txt}</li>`).join("")}</ul></div>
-  <div class="card" style="margin-top:1rem"><div class="bar"><h3>Disciplinas do docente</h3></div><table><thead><tr><th>Período</th><th>Código</th><th>Disciplina</th><th>CH sala</th><th>CH regência</th></tr></thead><tbody>${disciplinas.map(item=>`<tr><td>${item.periodo}</td><td>${item.codigo}</td><td>${item.disciplina}</td><td>${item.sala}</td><td>${item.regencia}</td></tr>`).join("")}</tbody></table></div>`;
+  <div class="card" style="margin-top:1rem"><div class="bar"><h3>Disciplinas do docente</h3></div><table><thead><tr><th>Período</th><th>Código</th><th>Disciplina</th><th>CH sala</th><th>CH regência</th></tr></thead><tbody>${disciplinas.map(item=>`<tr><td>${item.periodo}</td><td>${item.codigo}</td><td>${item.disciplina}</td><td>${formatCH(item.sala)}</td><td>${formatCH(item.regencia)}</td></tr>`).join("")}</tbody></table></div>`;
   panel.querySelector("#sel-resumo-docente").onchange=e=>{ state.resumoDocenteId=e.target.value; render(); };
 }
 function renderHorarios(){

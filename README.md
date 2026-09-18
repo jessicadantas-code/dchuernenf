@@ -276,3 +276,12 @@ Depois de conferir os dados importados, clique em `Salvar online` para publicar 
 - nomes/vínculos históricos não são apagados automaticamente;
 - botão `Organizar/atualizar base 27.1` força a limpeza e atualização novamente;
 - após conferir a base, usar `Salvar online` para tornar a versão organizada a compartilhada.
+
+
+## v20 — novas regras de DCH
+- Sem arredondamento para inteiros: a CH é mantida em decimal e exibida com até 2 casas.
+- CH de orientação permanece cadastrada no PPC, mas não entra automaticamente na DCH inicial.
+- Monografia: entra somente a CH teórica; orientação permanece individual na aba Atividades.
+- ECS I e II: as 60h teóricas são integrais para todos os docentes vinculados: 60/15 = 4h semanais para cada docente.
+- Supervisão de ECS foi movida para Atividades: 2h por aluno, máximo 6 alunos (máximo 12h), com nome de cada aluno.
+- Cada componente tem um Docente coordenador, escolhido entre os docentes vinculados. É informação organizacional e não altera CH.
